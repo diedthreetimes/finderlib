@@ -1,0 +1,19 @@
+bin/
+gen/
+
+*.class
+
+*.apk
+*.ap_
+
+local.properties
+
+
+#eclipse
+# Keep theese things for the time being
+#.loadpath
+*.tmp
+*.bak
+*.swp
+#.metadata
+*.launch

@@ -38,7 +38,7 @@ import android.util.Log;
  * thread for performing data transmissions when connected. It does not
  * howerver, handle discovery.
  */
-public class BluetoothService implements CommunicationService {	
+public class BluetoothService extends AbstractCommunicationService {	
 	// Debugging
     private static final String TAG = "BluetoothService";
     private static final boolean D = false;
@@ -58,11 +58,10 @@ public class BluetoothService implements CommunicationService {
     
 	// Member fields
     private final BluetoothAdapter mAdapter;
-    private Handler mHandler;
     private AcceptThread mSecureAcceptThread;
     private ConnectThread mConnectThread;
     private ConnectedThread mConnectedThread;
-    private int mState;
+    
     private int mNumTries;
 	private BluetoothDevice mDevice;
 	private boolean mSecure;
@@ -74,35 +73,10 @@ public class BluetoothService implements CommunicationService {
     * @param handler  A Handler to send messages back to the UI Activity
     */
     public BluetoothService(Context context, Handler handler) {
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
-        mState = STATE_NONE;
-        mHandler = handler;
+    	super(context, handler);
+    	mAdapter = BluetoothAdapter.getDefaultAdapter();
     }
     
-    // TODO: Work out communicating messages to multiple handlers
-    // This allows an activity to start a connection, and then hand it off
-    //   to another activity or service
-    public synchronized void setHandler(Handler handler){
-    	mHandler = handler;
-    }
-    
-    /**
-     * Set the current state of the connection
-     * @param state  An integer defining the current connection state
-     */
-    private synchronized void setState(int state) {
-        if (D) Log.d(TAG, "setState() " + mState + " -> " + state);
-        mState = state;
-
-        // Give the new state to the Handler so the UI Activity can update
-        mHandler.obtainMessage(MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
-    }
-
-    /**
-     * Return the current connection state. */
-    public synchronized int getState() {
-        return mState;
-    }
     
     /**
      * Start the communication service. Specifically start AcceptThread to begin a
@@ -240,7 +214,16 @@ public class BluetoothService implements CommunicationService {
 
         setState(STATE_CONNECTED);
     }
+
+    //TODO: All communications should support these. Implement!!
+    public synchronized void pause() {
+    	throw new RuntimeException("Pause not currently supported"); 
+    }
+    public synchronized void resume() {
+    	throw new RuntimeException("Resume not currently supported"); 
+    }
     
+
     /**
      * Stop all threads
      */
@@ -284,18 +267,7 @@ public class BluetoothService implements CommunicationService {
     }
     
     
-    public void write(String buffer) {
-    	write(buffer.getBytes());
-    	if(D) Log.d(TAG, "Write: " + buffer);
-    }
     
-    public void write(BigInteger out){
-    	write(out.toByteArray());
-    }
-    
-    public void write(ECPoint out){
-    	write(out.getEncoded());
-    }
    
     
     /**
@@ -320,22 +292,6 @@ public class BluetoothService implements CommunicationService {
         return readMessage;
     }
     
-    public BigInteger readBigInteger(){
-    	return new BigInteger(read());
-    }
-    
-    public ECPoint readECPoint(){
-    	//TODO: This probably doesn't belong here
-    	return NISTNamedCurves.getByName("P-224").getCurve().decodePoint(read());
-    }
-    
-    /**
-     * Read a string from Connected Thread
-     * @see #read()
-     */
-	public String readString() {
-		return new String(read());
-	}
     
     /**
      * Sets the readLoop flag to signify the behavior of socket reads

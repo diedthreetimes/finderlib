@@ -34,6 +34,8 @@ public interface CommunicationService {
     public void start();
     public void connect(String address, boolean secure);
     public void stop();
+    public void pause();
+    public void resume();
     
     public void write(byte[] out);
     public void write(String buffer);

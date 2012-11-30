@@ -20,8 +20,6 @@ int string instructions_paired_devices 0x7f04000f
 int string none_found 0x7f04000a
 int string none_paired 0x7f040009
 int string not_connected 0x7f040000
-int string paternity_negative 0x7f040014
-int string paternity_positive 0x7f040013
 int string scanning 0x7f040007
 int string secure_connect 0x7f040011
 int string select_device 0x7f040008

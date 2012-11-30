@@ -16,17 +16,17 @@
 
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
-    <!-- Conduct Test -->
+    <!-- Activity -->
     <string name="not_connected">You are not connected to a device</string>
     <string name="already_connected">You are already connected to a device</string>
     <string name="bt_not_enabled_leaving">Bluetooth was not enabled. Leaving.</string>
-    <string name="title_connecting">connecting&amp;#8230</string>
+    <string name="title_connecting">connecting&#8230;</string>
     <string name="title_connected_to">connected to <xliff:g id="device_name">%1$s</xliff:g></string>
     <string name="title_not_connected">not connected</string>
     <string name="something_went_wrong">Something went wrong. Try again</string>
 
     <!--  DeviceListActivity -->
-    <string name="scanning">scanning for devices&amp;#8230</string>
+    <string name="scanning">scanning for devices&#8230;</string>
     <string name="select_device">select a device to connect</string>
     <string name="none_paired">No devices have been paired</string>
     <string name="none_found">No devices found</string>
@@ -41,18 +41,14 @@
     <string name="secure_connect">Connect a device</string>
     <string name="discoverable">Make discoverable</string>
     <!-- change back to Paternity -->
-    
-    <!-- Paternity Test -->
-    <string name="paternity_positive">The result of the test indicates that the parties are parent and child.</string>
-    <string name="paternity_negative">The result of the test indicates that the parties are not parent and child.</string>
-    
+     
     <style name="ButtonText">
 	    <item name="android:layout_width">fill_parent</item>
 	    <item name="android:layout_height">wrap_content</item>
 	    <item name="android:textColor">#ffffff</item>
 	    <item name="android:gravity">center</item>
 	    <item name="android:layout_margin">3dp</item>
-	    <item name="android:textSize">30dp</item>
+	    <item name="android:textSize">30sp</item>
 	    <item name="android:textStyle">bold</item>
 	    <item name="android:shadowColor">#000000</item>
 	    <item name="android:shadowDx">1</item>

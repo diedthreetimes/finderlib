@@ -38,14 +38,9 @@ public final class R {
         public static int instructions_paired_devices=0x7f04000f;
         public static int none_found=0x7f04000a;
         public static int none_paired=0x7f040009;
-        /**  Conduct Test 
+        /**  Activity 
          */
         public static int not_connected=0x7f040000;
-        public static int paternity_negative=0x7f040014;
-        /**  change back to Paternity 
- Paternity Test 
-         */
-        public static int paternity_positive=0x7f040013;
         /**   DeviceListActivity 
          */
         public static int scanning=0x7f040007;
@@ -88,6 +83,8 @@ public final class R {
  All customizations that are NOT specific to a particular API-level can go here. 
          */
         public static int AppTheme=0x7f050002;
+        /**  change back to Paternity 
+         */
         public static int ButtonText=0x7f050000;
     }
 }

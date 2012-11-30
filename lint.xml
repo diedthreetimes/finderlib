@@ -1,3 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <lint>
+    <issue id="UnusedResources">
+        <ignore path="res/layout/device_list.xml" />
+        <ignore path="res/layout/device_name.xml" />
+        <ignore path="res/values/strings.xml" />
+    </issue>
 </lint>

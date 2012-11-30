@@ -19,8 +19,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.spongycastle.asn1.nist.NISTNamedCurves;
-import org.spongycastle.jce.ECPointUtil;
-import org.spongycastle.jce.interfaces.ECPointEncoder;
 import org.spongycastle.math.ec.ECPoint;
 
 import android.bluetooth.BluetoothAdapter;
@@ -40,7 +38,7 @@ import android.util.Log;
  * thread for performing data transmissions when connected. It does not
  * howerver, handle discovery.
  */
-public class BluetoothService {	
+public class BluetoothService implements CommunicationService {	
 	// Debugging
     private static final String TAG = "BluetoothService";
     private static final boolean D = false;
@@ -69,25 +67,6 @@ public class BluetoothService {
 	private BluetoothDevice mDevice;
 	private boolean mSecure;
     
-	// Constants that indicate the current connection state
-    public static final int STATE_NONE = 0;       // we're doing nothing
-    public static final int STATE_LISTEN = 1;     // now listening for incoming connections
-    public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
-    public static final int STATE_CONNECTED = 3;  // now connected to a remote device
-    public static final int STATE_STOPPED = 4;   // we're shutting things down
-    public static final int STATE_RETRY = 5;      // we are going to retry, but first we listen
-    
-    // Message types sent to mHandler
-    public static final int MESSAGE_STATE_CHANGE = 1;
-    public static final int MESSAGE_READ = 2;
-    public static final int MESSAGE_WRITE = 3;
-    public static final int MESSAGE_DEVICE_NAME = 4;
-    public static final int MESSAGE_TOAST = 5;
-    public static final int MESSAGE_FAILED = 6;
-    
-    // Key names sent to mHandler
-    public static final String DEVICE_NAME = "device_name";
-    public static final String TOAST = "toast";
 	
     /**
     * Constructor. Prepares a new Bluetooth session.
@@ -191,6 +170,11 @@ public class BluetoothService {
           mHandler.sendMessage(msg);
     }
     
+    
+    public synchronized void connect(String address, boolean secure){
+    	BluetoothDevice device = mAdapter.getRemoteDevice(address);
+    	connect(device, secure);
+    }
     /**
      * Start the ConnectThread to initiate a connection to a remote device.
      * @param device  The BluetoothDevice to connect

@@ -1,10 +1,16 @@
 package com.sprout.finderlib;
 
+import java.lang.ref.WeakReference;
 import java.math.BigInteger;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import org.spongycastle.math.ec.ECPoint;
 
 import android.os.Handler;
+import android.text.format.Time;
 
 
 public interface CommunicationService {
@@ -23,6 +29,9 @@ public interface CommunicationService {
     public static final int MESSAGE_DEVICE_NAME = 4;
     public static final int MESSAGE_TOAST = 5;
     public static final int MESSAGE_FAILED = 6;
+    
+    public static final String EXTRA_SERVICE_TRANFER = "com.sprout.finderlib.communicationservice.service_transfer";
+    public static final Map<String, WeakReference<CommunicationService>> com_transfers = new HashMap<String, WeakReference<CommunicationService>>();
     
     // Key names sent to mHandler
     public static final String DEVICE_NAME = "device_name";
@@ -54,6 +63,29 @@ public interface CommunicationService {
      */
     public void setReadLoop(boolean flag);
     
+    public Set<Device> bondedPeers();
+	public void discoverPeers(Callback callback);
+    
+	
+	public Device getSelf();
+	
+	/**
+	 * A interface to provide callbacks for certain events.
+	 * This is an alternative interface to the passed Handler which allows inter-thread communication
+	 */
+	//TODO: Provide a way for the device list to access this object (Think about making it static)
+	//TODO: Think about which method signature (or maybe both) makes sense
+	abstract class Callback {
+		public abstract void onDiscovery(Device peer);
+		public void onDiscovery(Collection<Device> peers){
+			for(Device device: peers)
+				onDiscovery(device);
+		}
+		
+		public void onDiscoveryComplete(boolean success){
+			
+		}
+	}
     
   
 }

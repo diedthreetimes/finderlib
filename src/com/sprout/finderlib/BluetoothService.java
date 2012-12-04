@@ -14,6 +14,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
 import java.math.BigInteger;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -25,7 +27,10 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -75,6 +80,11 @@ public class BluetoothService extends AbstractCommunicationService {
     public BluetoothService(Context context, Handler handler) {
     	super(context, handler);
     	mAdapter = BluetoothAdapter.getDefaultAdapter();
+    	
+    	// Register for broadcasts when a device is discovered or finished
+        mIntentFilter = new IntentFilter();
+        mIntentFilter.addAction(BluetoothDevice.ACTION_FOUND);
+        mIntentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
     }
     
     
@@ -83,6 +93,8 @@ public class BluetoothService extends AbstractCommunicationService {
      * session in listening (server) mode. Called by the Activity onResume() */
     public synchronized void start() {
         if (D) Log.d(TAG, "start");
+        
+        resume();
 
         startAcceptThread();
 
@@ -215,12 +227,12 @@ public class BluetoothService extends AbstractCommunicationService {
         setState(STATE_CONNECTED);
     }
 
-    //TODO: All communications should support these. Implement!!
+    // TODO: Will the activating another activity cause these events to be missed?
     public synchronized void pause() {
-    	throw new RuntimeException("Pause not currently supported"); 
+    	mContext.unregisterReceiver(mReceiver);
     }
     public synchronized void resume() {
-    	throw new RuntimeException("Resume not currently supported"); 
+    	mContext.registerReceiver(mReceiver, mIntentFilter);
     }
     
 
@@ -231,6 +243,11 @@ public class BluetoothService extends AbstractCommunicationService {
         if (D) Log.d(TAG, "stop");
         setState(STATE_STOPPED);
 
+        // Make sure we're not doing discovery anymore
+        if (mAdapter != null) {
+            mAdapter.cancelDiscovery();
+        }
+        
         if (mConnectThread != null) {
             mConnectThread.cancel();
             mConnectThread = null;
@@ -631,4 +648,56 @@ public class BluetoothService extends AbstractCommunicationService {
             }
         }
     }
+
+    
+    //TODO: Move this discovery code to the top of the class
+    Callback callback;
+    
+    // The BroadcastReceiver that listens for discovered devices and
+    // changes the title when discovery is finished
+	private IntentFilter mIntentFilter;
+    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+
+            // When discovery finds a device
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                // Get the BluetoothDevice object from the Intent
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                // If it's already paired, skip it, because it's been listed already
+                if (device.getBondState() != BluetoothDevice.BOND_BONDED && callback != null) {
+                	callback.onDiscovery(new Device(device));
+                }
+            // When discovery is finished, change the Activity title
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+            	callback.onDiscoveryComplete(true);
+            }
+        }
+    };
+    
+	@Override
+	public void discoverPeers(Callback callback) {
+		this.callback = callback;
+	
+		// If we're already discovering, stop it
+        if (mAdapter.isDiscovering()) {
+            mAdapter.cancelDiscovery();
+        }
+
+        // Request discover from BluetoothAdapter
+        mAdapter.startDiscovery();
+	}
+	
+	public Set<Device> bondedPeers() {
+		Set<Device> ans = new HashSet<Device>();
+		for(BluetoothDevice device: mAdapter.getBondedDevices()){
+			ans.add(new Device(device));
+		}
+		return ans;
+	}
+	
+	public Device getSelf() {
+		return new Device(mAdapter.getName(), mAdapter.getAddress());
+	}
 }

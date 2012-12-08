@@ -10,71 +10,52 @@ package com.sprout.finderlib;
 public final class R {
     public static final class attr {
     }
-    public static final class color {
-        public static int layout_border_color=0x7f040001;
-        public static int status_bar_color=0x7f040000;
-    }
     public static final class drawable {
-        public static int details_view=0x7f020000;
-        public static int ic_launcher=0x7f020001;
-        public static int machine=0x7f020002;
+        public static int ic_launcher=0x7f020000;
+        public static int machine=0x7f020001;
     }
     public static final class id {
-        public static int btn_connect=0x7f070000;
-        public static int btn_disconnect=0x7f070001;
-        public static int btn_start_client=0x7f070002;
-        public static int button_scan=0x7f070012;
-        public static int device_address=0x7f070003;
-        public static int device_details=0x7f070015;
-        public static int device_info=0x7f070004;
-        public static int device_name=0x7f070014;
-        public static int display_name=0x7f07000b;
-        public static int group_ip=0x7f070006;
-        public static int group_owner=0x7f070005;
-        public static int icon=0x7f070013;
-        public static int instructions_new_devices=0x7f07000f;
-        public static int instructions_paired_devices=0x7f07000c;
-        public static int linearLayout1=0x7f070009;
-        public static int new_devices=0x7f070011;
-        public static int paired_devices=0x7f07000e;
-        public static int status_bar=0x7f070007;
-        public static int status_text=0x7f070008;
-        public static int title_display_name=0x7f07000a;
-        public static int title_new_devices=0x7f070010;
-        public static int title_paired_devices=0x7f07000d;
+        public static int button_scan=0x7f060009;
+        public static int display_name=0x7f060002;
+        public static int instructions_new_devices=0x7f060006;
+        public static int instructions_paired_devices=0x7f060003;
+        public static int linearLayout1=0x7f060000;
+        public static int new_devices=0x7f060008;
+        public static int paired_devices=0x7f060005;
+        public static int title_display_name=0x7f060001;
+        public static int title_new_devices=0x7f060007;
+        public static int title_paired_devices=0x7f060004;
     }
     public static final class layout {
-        public static int device_detail=0x7f030000;
-        public static int device_list=0x7f030001;
-        public static int device_name=0x7f030002;
-        public static int row_devices=0x7f030003;
+        public static int device_list=0x7f030000;
+        public static int device_name=0x7f030001;
     }
     public static final class string {
-        public static int already_connected=0x7f050001;
-        public static int bt_not_enabled_leaving=0x7f050002;
-        public static int button_scan=0x7f05000e;
-        public static int discoverable=0x7f050012;
-        public static int instructions_new_devices=0x7f050010;
-        public static int instructions_paired_devices=0x7f05000f;
-        public static int none_found=0x7f05000a;
-        public static int none_paired=0x7f050009;
+        public static int already_connected=0x7f040001;
+        public static int bt_not_enabled_leaving=0x7f040002;
+        public static int button_scan=0x7f04000e;
+        public static int discoverable=0x7f040012;
+        public static int instructions_new_devices=0x7f040010;
+        public static int instructions_paired_devices=0x7f04000f;
+        public static int none_found=0x7f04000a;
+        public static int none_paired=0x7f040009;
         /**  Activity 
          */
-        public static int not_connected=0x7f050000;
+        public static int not_connected=0x7f040000;
         /**   DeviceListActivity 
          */
-        public static int scanning=0x7f050007;
+        public static int scanning=0x7f040007;
         /**  Options Menu 
          */
-        public static int secure_connect=0x7f050011;
-        public static int select_device=0x7f050008;
-        public static int something_went_wrong=0x7f050006;
-        public static int title_connected_to=0x7f050004;
-        public static int title_connecting=0x7f050003;
-        public static int title_display_name=0x7f05000d;
-        public static int title_not_connected=0x7f050005;
-        public static int title_other_devices=0x7f05000c;
-        public static int title_paired_devices=0x7f05000b;
+        public static int secure_connect=0x7f040011;
+        public static int select_device=0x7f040008;
+        public static int something_went_wrong=0x7f040006;
+        public static int title_connected_to=0x7f040004;
+        public static int title_connecting=0x7f040003;
+        public static int title_display_name=0x7f04000d;
+        public static int title_not_connected=0x7f040005;
+        public static int title_other_devices=0x7f04000c;
+        public static int title_paired_devices=0x7f04000b;
     }
     public static final class style {
         /** 
@@ -98,13 +79,13 @@ public final class R {
     
  API 14 theme customizations can go here. 
          */
-        public static int AppBaseTheme=0x7f060001;
+        public static int AppBaseTheme=0x7f050001;
         /**  Application theme. 
  All customizations that are NOT specific to a particular API-level can go here. 
          */
-        public static int AppTheme=0x7f060002;
+        public static int AppTheme=0x7f050002;
         /**  change back to Paternity 
          */
-        public static int ButtonText=0x7f060000;
+        public static int ButtonText=0x7f050000;
     }
 }

@@ -48,6 +48,7 @@ public class WifiService extends AbstractCommunicationService {
 	//TODO: Work out using states and threads!!
 	@Override
 	public synchronized void start() {
+		if(D) Log.d(TAG, "Start");
 		resume();
 	}
 
@@ -72,16 +73,19 @@ public class WifiService extends AbstractCommunicationService {
 
 	@Override
 	public synchronized void stop() {
+		if(D) Log.d(TAG, "Stop");
 		pause();
 	}
 	
 	@Override
 	public void pause() {
+		if(D) Log.d(TAG, "Pause");
 		mContext.unregisterReceiver(mReceiver);
 	}
 
 	@Override
 	public void resume() {
+		if(D) Log.d(TAG, "Resume");
 		mContext.registerReceiver(mReceiver, mIntentFilter);
 	}
 	
@@ -93,11 +97,13 @@ public class WifiService extends AbstractCommunicationService {
 		mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
 			@Override
 			public void onSuccess() {
+				if(D) Log.d(TAG, "Discovery Success");
 				callback.onDiscoveryComplete(true);
 			}
 
 			@Override
 			public void onFailure(int reasonCode) {
+				if(D) Log.d(TAG, "Discovery Failure");
 				callback.onDiscoveryComplete(false);
 			}
 		});
@@ -156,6 +162,7 @@ public class WifiService extends AbstractCommunicationService {
 	        this.peerListListener = new PeerListListener() {
 	    	public void onPeersAvailable (WifiP2pDeviceList peers){
 	    		
+	    		if(D) Log.d(TAG, "Peers Returned");
 	    			List<Device> ans = new ArrayList<Device>();
 	    			for(WifiP2pDevice device : peers.getDeviceList()){
 	    				Log.d(TAG, "Device address: " + device.deviceAddress);
@@ -180,6 +187,8 @@ public class WifiService extends AbstractCommunicationService {
 	    public void onReceive(Context context, Intent intent) {
 	        String action = intent.getAction();
 
+	        if(D) Log.d(TAG, "Broadcast intent recieved");
+	        
 	        if (WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION.equals(action)) {
 	        	int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
 	            if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {

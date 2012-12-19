@@ -1,23 +1,36 @@
 package com.sprout.finderlib;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.StreamCorruptedException;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.NetworkInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.WifiP2pManager.ActionListener;
 import android.net.wifi.p2p.WifiP2pManager.Channel;
+import android.net.wifi.p2p.WifiP2pManager.ConnectionInfoListener;
 import android.net.wifi.p2p.WifiP2pManager.PeerListListener;
+import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 
 public class WifiService extends AbstractCommunicationService {
@@ -32,10 +45,19 @@ public class WifiService extends AbstractCommunicationService {
 	
 	private WifiP2pDevice device;
 	
+	private static final int SOCKET_TIMEOUT = 5000;
+	private static final int MAX_RETRY = 2;
+	
+	private int mNumTries;
+    private AcceptThread mSecureAcceptThread;
+    private ConnectThread mConnectThread;
+    private ConnectedThread mConnectedThread;
+	
 	public WifiService(Context context, Handler handler) {
 		super(context, handler);
 		mManager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
-	    mChannel = mManager.initialize(context, context.getMainLooper(), null);
+		mChannel = mManager.initialize(context, context.getMainLooper(), null);
+
 	    mReceiver = new WiFiDirectBroadcastReceiver(mManager, mChannel, handler, null);
 	    
 	    mIntentFilter = new IntentFilter();
@@ -43,6 +65,9 @@ public class WifiService extends AbstractCommunicationService {
 	    mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION);
 	    mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION);
 	    mIntentFilter.addAction(WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION);
+	    
+	    if(mManager == null) Log.d(TAG, "mManager is null"); 	    
+	    if(mChannel == null) Log.d(TAG, "mChannel is null"); // In this case p2p is probably not supported
 	}
 	
 	//TODO: Work out using states and threads!!
@@ -50,22 +75,31 @@ public class WifiService extends AbstractCommunicationService {
 	public synchronized void start() {
 		if(D) Log.d(TAG, "Start");
 		resume();
+		
+		mNumTries = 0;
 	}
 
 	@Override
 	public synchronized void connect(String address, boolean secure) {
 		WifiP2pConfig config = new WifiP2pConfig();
 		config.deviceAddress = address;
+		
+		if(D) Log.d(TAG, "Attempting connection with: " + address);
+		
 		mManager.connect(mChannel, config, new ActionListener() {
 
 		    @Override
 		    public void onSuccess() {
 		        //TODO: success logic
+		    	
+		    	if(D) Log.d(TAG, "Connection succesfull");
 		    }
 
 		    @Override
 		    public void onFailure(int reason) {
 		        //TODO: failure logic
+		    	
+		    	if(D) Log.d(TAG, "Connection failed");
 		    }
 		});
 
@@ -73,8 +107,30 @@ public class WifiService extends AbstractCommunicationService {
 
 	@Override
 	public synchronized void stop() {
+		
+		//TODO: Stop discovery
+		// Only supported in api 16
+		// stopPeerDiscovery (WifiP2pManager.Channel c, WifiP2pManager.ActionListener listener)
+		
 		if(D) Log.d(TAG, "Stop");
 		pause();
+		
+        setState(STATE_STOPPED);
+        
+        if (mConnectThread != null) {
+            mConnectThread.cancel();
+            mConnectThread = null;
+        }
+
+        if (mConnectedThread != null) {
+            mConnectedThread.cancel();
+            mConnectedThread = null;
+        }
+
+        if (mSecureAcceptThread != null) {
+            mSecureAcceptThread.cancel();
+            mSecureAcceptThread = null;
+        }
 	}
 	
 	@Override
@@ -109,23 +165,68 @@ public class WifiService extends AbstractCommunicationService {
 		});
 	}
 
-	@Override
-	public void write(byte[] out) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public byte[] read() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void setReadLoop(boolean flag) {
-		// TODO Auto-generated method stub
-
-	}
+    /**
+     * Write to the ConnectedThread in an unsynchronized manner
+     * 
+     * This does not add message boundries!!
+     * @param out The bytes to write
+     * @see ConnectedThread#write(byte[])
+     */
+    public void write(byte[] out) {
+        // Create temporary object
+        ConnectedThread r;
+        // Synchronize a copy of the ConnectedThread
+        synchronized (this) {
+            if (mState != STATE_CONNECTED) return;
+            r = mConnectedThread;
+        }
+        // Perform the write unsynchronized
+        r.write(out);
+    }
+    
+    
+    
+   
+    
+    /**
+     * Read from the ConnectedThread in an unsynchronized manner
+     * Note, this is a blocking call
+     * @return the bytes read
+     * @see ConnectedThread#read()
+     */
+    public byte [] read() {
+        // Create temporary object
+        ConnectedThread r;
+        // Synchronize a copy of the ConnectedThread
+        synchronized (this) {
+            if (mState != STATE_CONNECTED) return null;
+            r = mConnectedThread;
+        }
+        
+        // Perform the read unsynchronized and parse
+        byte[] readMessage = r.read();
+        
+        if(D) Log.d(TAG, "Read: " + new String(readMessage));
+        return readMessage;
+    }
+    
+    
+    /**
+     * Sets the readLoop flag to signify the behavior of socket reads
+     * @param flag The desired behavior of the read loop. \
+     *     True[on] signifies that all messages will be passed to the handler as they arrive. 
+     * @see ConnectedThread#setReadLoop()
+     */
+    public void setReadLoop(boolean flag){
+	   	 ConnectedThread r;
+	     // Synchronize a copy of the ConnectedThread
+	     synchronized (this) {
+	         if (mState != STATE_CONNECTED) return;
+	         r = mConnectedThread;
+	     }
+	     // Perform the write unsynchronized
+	     r.setReadLoop(flag);
+    }
 	
 	@Override
 	public Set<Device> bondedPeers() {
@@ -207,7 +308,45 @@ public class WifiService extends AbstractCommunicationService {
 	                manager.requestPeers(channel, peerListListener);
 	            }
 	        } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
+	        	
+	        	Log.d(TAG, "P2P Connection Changed");
 	            // Respond to new connection or disconnections
+	        	NetworkInfo networkInfo = (NetworkInfo) intent
+	                    .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
+
+	            if (networkInfo.isConnected()) {
+	            	Log.d(TAG, "Requesting Connection Info");
+	                // we are connected with the other device, request connection                                 
+	                // info to find group owner IP                                                                
+		        manager.requestConnectionInfo(channel, new ConnectionInfoListener(){
+					@Override
+					public void onConnectionInfoAvailable(WifiP2pInfo info) {
+						// TODO: Pass connection info to the handler?
+						
+						// After the group negotiation, we assign the group owner as the server                                                                                        
+				        if (info.groupFormed && info.isGroupOwner) {
+				            if(D) Log.d(TAG, "Server Started");
+				       
+				            //TODO: Make port configurable
+				            startAcceptThread(8988);				     
+				        } else if (info.groupFormed) {
+				            // The other device acts as the client.                                                                             
+				            if(D) Log.d(TAG, "Client Started");
+				            
+				            String host = info.groupOwnerAddress.getHostAddress();
+				            startConnectThread(host, 8988, true);
+				        }
+
+						
+					}
+		        });
+	            } else {
+	                // It's a disconnect
+	            	//TODO: Handle disconnect
+	                //activity.resetData();
+	            }
+
+	        	
 	        	// Here if we want we can print various network information
 	        	Log.d(TAG,"P2P connection changed");
 	        } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
@@ -219,5 +358,423 @@ public class WifiService extends AbstractCommunicationService {
 	    }
 
 	}
+	
+	private synchronized void startAcceptThread(int port) {
+    	// Cancel any thread attempting to make a connection
+        if (mConnectThread != null) {mConnectThread.cancel(); mConnectThread = null;}
 
+        // Cancel any thread currently running a connection
+        if (mConnectedThread != null) {mConnectedThread.cancel(); mConnectedThread = null;}
+    	
+    	// Start the thread to listen on a BluetoothServerSocket
+        if (mSecureAcceptThread == null) {
+            mSecureAcceptThread = new AcceptThread(true, port);
+            mSecureAcceptThread.start();
+        }
+    }
+	
+	protected synchronized void retry() {
+    	if(D) Log.d(TAG, "retry");
+    	
+    	if(D) Log.d(TAG, "Retrying in state: " + getState());
+    	
+    	if(mState == STATE_CONNECTED) return;
+    	
+    	signalFailed();
+		start();
+		return;
+		// TODO: How do we rety a WiFi connection
+    	/* if(mNumTries >= MAX_RETRY){
+    	
+    		signalFailed();
+    		start();
+    		return;
+    	}
+    	
+    	startAcceptThread();
+    	
+    	setState(STATE_RETRY);
+    	
+    	int sleep = (int) (Math.random()*1000 + 100);
+    	if(D) Log.d(TAG, "Sleeping: " + sleep);
+    	try {
+			Thread.sleep(sleep);
+		} catch (InterruptedException e) {
+			Log.e(TAG, "Sleep interupted");
+		} //TODO: This blocks the UI!
+    	
+    	if(D) Log.d(TAG, "Waking up: " + getState());
+    	
+    	// TODO: make this less strict
+    	if( mState != STATE_CONNECTING && mState != STATE_CONNECTED && mConnectedThread == null && mConnectThread == null)
+    		connect(mDevice, mSecure);
+    	*/
+    }
+	
+	/**
+     * Start the ConnectThread to initiate a connection to a remote device.
+     * @param device  The ip address to connect to
+     * @param port the port to connect to 
+     * @param secure Socket Security type - Secure (true) , Insecure (false)
+     */
+    public synchronized void startConnectThread(String address, int port, boolean secure) {
+        if (D) Log.d(TAG, "connect to: " + device);
+
+        // Don't throw out connections if we are already connected
+        if( mState == STATE_CONNECTING || mConnectedThread != null ){
+        	return;
+        }
+        
+        mNumTries++;
+// Commented out for test
+//        // Cancel any thread attempting to make a connection
+//        if (mState == STATE_CONNECTING) {
+//            if (mConnectThread != null) {mConnectThread.cancel(); mConnectThread = null;}
+//        }
+//
+//        // Cancel any thread currently running a connection
+//        if (mConnectedThread != null) {mConnectedThread.cancel(); mConnectedThread = null;}
+
+        // Start the thread to connect with the given device
+        mConnectThread = new ConnectThread(address, port, secure);
+        mConnectThread.start();
+        setState(STATE_CONNECTING);
+    }
+    
+    /**
+     * Start the ConnectedThread to begin managing a Bluetooth connection
+     * @param socket  The BluetoothSocket on which the connection was made
+     * @param device  The BluetoothDevice that has been connected
+     */
+    public synchronized void connected(Socket socket, final String socketType) {
+        if (D) Log.d(TAG, "connected, Socket Type:" + socketType);
+
+        // Cancel the thread that completed the connection
+        if (mConnectThread != null) {mConnectThread.cancel(); mConnectThread = null;}
+
+        // Cancel any thread currently running a connection
+        if (mConnectedThread != null) {mConnectedThread.cancel(); mConnectedThread = null;}
+
+        // Cancel the accept thread because we only want to connect to one device
+        if (mSecureAcceptThread != null) {
+            mSecureAcceptThread.cancel();
+            mSecureAcceptThread = null;
+        }
+
+        // Start the thread to manage the connection and perform transmissions
+        mConnectedThread = new ConnectedThread(socket, socketType);
+        mConnectedThread.start();
+
+        // Send the name of the connected device back to the UI Activity
+        Message msg = mHandler.obtainMessage(MESSAGE_DEVICE_NAME);
+        Bundle bundle = new Bundle();
+        bundle.putString(DEVICE_NAME, socket.getInetAddress().toString());
+        msg.setData(bundle);
+        mHandler.sendMessage(msg);
+
+        setState(STATE_CONNECTED);
+    }
+
+	/**
+     * This thread runs while listening for incoming connections. It behaves
+     * like a server-side client. It runs until a connection is accepted
+     * (or until cancelled).
+     */
+    private class AcceptThread extends Thread {
+        // The local server socket
+        private final ServerSocket mmServerSocket;
+        private String mSocketType;
+
+        public AcceptThread(boolean secure, int port) {
+            ServerSocket tmp = null;
+            mSocketType = secure ? "Secure":"Insecure";
+
+            // Create a new listening server socket
+            try {
+                if (secure) {
+                	// We should use something like this here SSLServerSocket.startHandshake
+                    tmp = new ServerSocket(port);
+                } else {
+                    tmp = new ServerSocket(port);
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "Socket Type: " + mSocketType + "listen() failed", e);
+            }
+            
+            mmServerSocket = tmp;
+        }
+
+        public void run() {
+            if(D) Log.i(TAG, "BEGIN mAcceptThread Socket Type: " + mSocketType + this );
+            setName("AcceptThread" + mSocketType);
+
+            Socket socket = null;
+
+            // Listen to the server socket if we're not connected
+            while (mState != STATE_CONNECTED) {
+                try {
+                    // This is a blocking call and will only return on a
+                    // successful connection or an exception
+                	if(mmServerSocket == null){
+                		break;
+                	}
+                	
+                    socket = mmServerSocket.accept();
+                } catch (IOException e) {
+                    Log.e(TAG, "Socket Type: " + mSocketType + "accept() failed", e);
+                    break;
+                }
+
+                // If a connection was accepted
+                if (socket != null) {
+                    synchronized (WifiService.this) {
+                        switch (mState) {
+                        case STATE_LISTEN:
+                        case STATE_CONNECTING:
+                            // Situation normal. Start the connected thread.
+                            connected(socket,
+                                    mSocketType);
+                            break;
+                        case STATE_NONE:
+                        case STATE_CONNECTED:
+                            // Either not ready or already connected. Terminate new socket.
+                            try {
+                                socket.close();
+                            } catch (IOException e) {
+                                Log.e(TAG, "Could not close unwanted socket", e);
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            if (D) Log.i(TAG, "END mAcceptThread, socket Type: " + mSocketType);
+
+        }
+        
+        public void cancel() {
+            if (D) Log.d(TAG, "Socket Type" + mSocketType + "cancel " + this);
+            try {
+                mmServerSocket.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Socket Type" + mSocketType + "close() of server failed", e);
+            }
+        }
+    }
+    
+    /**
+     * This thread runs while attempting to make an outgoing connection
+     * with a device. It runs straight through; the connection either
+     * succeeds or fails.
+     */
+    private class ConnectThread extends Thread {
+        private final Socket mmSocket;
+        private String mSocketType;
+        private String host;
+        int port;
+
+        public ConnectThread(String host, int port, boolean secure) {
+            Socket tmp = null;
+            mSocketType = secure ? "Secure" : "Insecure";
+
+            this.host = host;
+            this.port = port;
+            
+            // Initialize a socket
+            
+            try {
+                if (secure) {
+                	//TODO: use SSL here
+                    tmp = new Socket();
+                    tmp.bind(null);
+                } else {
+                    tmp = new Socket();
+                    tmp.bind(null);
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "Socket Type: " + mSocketType + "create() failed", e);
+            }
+            mmSocket = tmp;
+        }
+
+        public void run() {
+            Log.i(TAG, "BEGIN mConnectThread SocketType:" + mSocketType);
+            setName("ConnectThread" + mSocketType);
+
+            // Always cancel discovery because it will slow down a connection
+            //TODO: Cancel discovery?
+
+            // Make a connection to the Socket
+            try {
+                // This is a blocking call and will only return on a
+                // successful connection or an exception
+                mmSocket.connect((new InetSocketAddress(host, port)), SOCKET_TIMEOUT);
+            } catch (IOException e) {
+                // Close the socket
+                try {
+                    mmSocket.close();
+                } catch (IOException e2) {
+                    Log.e(TAG, "unable to close() " + mSocketType +
+                            " socket during connection failure", e2);
+                }
+                connectionFailed();
+                return;
+            }
+
+            // Reset the ConnectThread because we're done
+            synchronized (WifiService.this) {
+                mConnectThread = null;
+            }
+
+            // Start the connected thread
+            connected(mmSocket, mSocketType);
+        }
+
+        public void cancel() {
+        	if (mmSocket != null) {
+                if (mmSocket.isConnected()) {
+                    try {
+                        mmSocket.close();
+                    } catch (IOException e) {
+                    	Log.e(TAG, "close() of connect " + mSocketType + " socket failed", e);                        Log.e(TAG, e.getStackTrace().toString());
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * This thread runs during a connection with a remote device.
+     * It handles all incoming and outgoing transmissions.
+     */
+    private class ConnectedThread extends Thread {
+		private final Socket mmSocket;
+        private final DataInputStream mmInStream;
+        private final DataOutputStream mmOutStream;
+        private boolean mForwardRead = true;
+        private BlockingQueue<byte []> mMessageBuffer;
+        	
+        public ConnectedThread(Socket socket, String socketType) {
+            Log.d(TAG, "create ConnectedThread: " + socketType);
+            mmSocket = socket;
+            DataInputStream tmpIn = null;
+            DataOutputStream tmpOut = null;
+            mMessageBuffer = new LinkedBlockingQueue<byte []>(); // TODO: add a capacity here to prevent doS
+            
+            if(!socket.isConnected())
+            	Log.e(TAG,"Connected thread passed closed socket");
+            
+            // Get the BluetoothSocket input and output streams
+            try {
+                tmpIn = new DataInputStream( socket.getInputStream() );
+                tmpOut = new DataOutputStream( socket.getOutputStream() );
+                
+            } catch (StreamCorruptedException e) {
+				Log.e(TAG, "object streams corrupt", e);
+            } catch (IOException e) {
+                Log.e(TAG, "temp sockets not created", e);
+            }
+
+			mmInStream = tmpIn;
+			mmOutStream = tmpOut; 
+        }
+
+       
+        
+        /**
+         * Sets the readLoop flag to signify the behavior of socket reads
+         * 
+         * Some cycles may be required before the change takes into affect.
+         * As a result, a packet may be processed incorrectly.
+         *   
+         * True(on) indicates that all messages will be passed to the handler as they arive.
+         * False(off) indicates that messages will only be read on demand via {@link #read()}
+         * @param flag The desired behavior of the read loop.
+         */
+        public void setReadLoop(boolean flag) {
+			mForwardRead = flag; 
+		}
+
+        /**
+         * Read from the ConnectedThread in an unsynchronized manner
+         * 
+         * This is a blocking call and will only return data if the readLoop flag is false
+         * @return the bytes read
+         * @see ConnectedThread#read()
+         */
+		public byte[] read() {
+			// read should not be used if packets are being read directly off the wire
+			if(mForwardRead){
+				return null; //TODO: Raise here?
+			}
+			
+			try {
+				return mMessageBuffer.take();
+			} catch (InterruptedException e) {
+				Log.e(TAG, "Message Read Interupted");
+				return null;
+			}
+		}
+		
+		/**
+         * Write to the connected OutStream.
+         * @param buffer  The bytes to write
+         */
+        public void write(byte[] buffer) {
+            try {
+            	mmOutStream.writeInt(buffer.length);
+                mmOutStream.write(buffer);               
+
+                // Share the sent message back to the UI Activity
+                mHandler.obtainMessage(MESSAGE_WRITE, -1, -1, buffer)
+                        .sendToTarget();
+            } catch (IOException e) {
+                Log.e(TAG, "Exception during write", e);
+            }
+        }
+
+		public void run() {
+            Log.i(TAG, "BEGIN mConnectedThread");
+            
+            int bytes;
+			
+            // Keep listening to the InputStream while connected
+            while (true) {
+            	try {
+            		// Read from the InputStream
+            		bytes = mmInStream.readInt();	
+            		byte[] buffer = new byte[bytes]; // TODO: This is a little dangerous	
+            		
+            		mmInStream.readFully(buffer, 0, bytes);
+            		
+                    if(mForwardRead) {
+	                    mHandler.obtainMessage(MESSAGE_READ, buffer.length, -1, buffer)
+	                            .sendToTarget();
+                    }
+                    else {
+			    	    try {
+			    	    	
+							mMessageBuffer.put(buffer);
+						} catch (InterruptedException e) {
+							Log.e(TAG, "Message add interupted.");
+							//TODO: possibly throw here
+						}
+                    }
+                } catch (IOException e) {
+                    Log.e(TAG, "disconnected", e);
+                    connectionLost();
+                    break;
+                }
+        	}
+        }
+
+        public void cancel() {
+            try {
+                mmSocket.close();
+            } catch (IOException e) {
+                Log.e(TAG, "close() of connect socket failed", e);
+            }
+        }
+    }
+	
 }

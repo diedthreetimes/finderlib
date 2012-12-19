@@ -7,7 +7,9 @@ import org.spongycastle.math.ec.ECPoint;
 
 import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
+import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 
 public abstract class AbstractCommunicationService implements
@@ -52,6 +54,48 @@ public abstract class AbstractCommunicationService implements
         // Give the new state to the Handler so the UI Activity can update
         mHandler.obtainMessage(MESSAGE_STATE_CHANGE, state, -1).sendToTarget();
     }
+    
+    /**
+     * Indicate that the connection attempt failed and notify the UI Activity.
+     */
+    protected void connectionFailed() {
+    	
+        // Send a failure message back to the Activity
+        Message msg = mHandler.obtainMessage(MESSAGE_TOAST);
+        Bundle bundle = new Bundle();
+        bundle.putString(TOAST, "Unable to connect device");
+        msg.setData(bundle);
+        mHandler.sendMessage(msg);
+
+        // Start the service over to restart listening mode
+        if(getState() != STATE_STOPPED)
+        	retry();
+    }
+    
+    /**
+     * Indicate that the connection was lost and notify the UI Activity.
+     */
+    protected void connectionLost() {
+    	// Send a failure message back to the Activity
+        Message msg = mHandler.obtainMessage(MESSAGE_TOAST);
+        Bundle bundle = new Bundle();
+        bundle.putString(TOAST, "Device connection was lost");
+        msg.setData(bundle);
+        mHandler.sendMessage(msg);
+
+        // Start the service over to restart listening mode
+        if(getState() != STATE_STOPPED){
+            start();
+        }
+        	
+    }
+    
+    protected void signalFailed(){
+  	  Message msg = mHandler.obtainMessage(MESSAGE_FAILED);
+        mHandler.sendMessage(msg);
+    }
+    
+    protected abstract void retry();
     
 	@Override
     /**

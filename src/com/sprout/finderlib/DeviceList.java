@@ -152,6 +152,7 @@ public class DeviceList extends Activity {
 
 		@Override
 		public void onDiscovery(Device peer) {
+			//TODO: check if peer has been added already
 			mNewDevicesArrayAdapter.add(peer);
 		}  	
     	

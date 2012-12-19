@@ -117,7 +117,7 @@ public class BluetoothService extends AbstractCommunicationService {
         }
     }
     
-    private synchronized void retry() {
+    protected synchronized void retry() {
     	if(D) Log.d(TAG, "retry");
     	
     	if(D) Log.d(TAG, "Retrying in state: " + getState());
@@ -141,7 +141,7 @@ public class BluetoothService extends AbstractCommunicationService {
 			Thread.sleep(sleep);
 		} catch (InterruptedException e) {
 			Log.e(TAG, "Sleep interupted");
-		} //TODO: will this block the ui?
+		} //TODO: This blocks the UI!
     	
     	if(D) Log.d(TAG, "Waking up: " + getState());
     	
@@ -150,11 +150,7 @@ public class BluetoothService extends AbstractCommunicationService {
     		connect(mDevice, mSecure);
     }
     
-    //TODO: Maybe this should be somewhere else such as connectionFailed
-    private void signalFailed(){
-    	  Message msg = mHandler.obtainMessage(MESSAGE_FAILED);
-          mHandler.sendMessage(msg);
-    }
+    
     
     
     public synchronized void connect(String address, boolean secure){
@@ -325,41 +321,6 @@ public class BluetoothService extends AbstractCommunicationService {
 	     }
 	     // Perform the write unsynchronized
 	     r.setReadLoop(flag);
-    }
-    
-    /**
-     * Indicate that the connection attempt failed and notify the UI Activity.
-     */
-    private void connectionFailed() {
-    	
-        // Send a failure message back to the Activity
-        Message msg = mHandler.obtainMessage(MESSAGE_TOAST);
-        Bundle bundle = new Bundle();
-        bundle.putString(TOAST, "Unable to connect device");
-        msg.setData(bundle);
-        mHandler.sendMessage(msg);
-
-        // Start the service over to restart listening mode
-        if(getState() != STATE_STOPPED)
-        	BluetoothService.this.retry();
-    }
-    
-    /**
-     * Indicate that the connection was lost and notify the UI Activity.
-     */
-    private void connectionLost() {
-    	// Send a failure message back to the Activity
-        Message msg = mHandler.obtainMessage(MESSAGE_TOAST);
-        Bundle bundle = new Bundle();
-        bundle.putString(TOAST, "Device connection was lost");
-        msg.setData(bundle);
-        mHandler.sendMessage(msg);
-
-        // Start the service over to restart listening mode
-        if(getState() != STATE_STOPPED){
-            BluetoothService.this.start();
-        }
-        	
     }
     
     /**

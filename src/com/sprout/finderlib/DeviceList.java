@@ -62,6 +62,7 @@ public class DeviceList extends Activity {
 		
 		if(comService == null){
 			//TODO: What do we do if it is Null? Raise?
+			Log.e(TAG,"Communication Service not provided");
 		}
 		
 		// Setup the window

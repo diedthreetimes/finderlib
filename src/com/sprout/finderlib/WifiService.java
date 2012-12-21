@@ -2,8 +2,10 @@ package com.sprout.finderlib;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
+import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -19,6 +21,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.NetworkInfo;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WpsInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pDeviceList;
@@ -83,6 +87,9 @@ public class WifiService extends AbstractCommunicationService {
 	public synchronized void connect(String address, boolean secure) {
 		WifiP2pConfig config = new WifiP2pConfig();
 		config.deviceAddress = address;
+		if(secure)
+			config.wps.setup = WpsInfo.PBC; // TODO: Does this provide authentication
+		
 		
 		if(D) Log.d(TAG, "Attempting connection with: " + address);
 		
@@ -92,14 +99,14 @@ public class WifiService extends AbstractCommunicationService {
 		    public void onSuccess() {
 		        //TODO: success logic
 		    	
-		    	if(D) Log.d(TAG, "Connection succesfull");
+		    	if(D) Log.d(TAG, "Invitation sent");
 		    }
 
 		    @Override
 		    public void onFailure(int reason) {
 		        //TODO: failure logic
 		    	
-		    	if(D) Log.d(TAG, "Connection failed");
+		    	if(D) Log.d(TAG, "Invitation failed");
 		    }
 		});
 
@@ -231,7 +238,9 @@ public class WifiService extends AbstractCommunicationService {
 	@Override
 	public Set<Device> bondedPeers() {
 		// WiFi does not have a concept of bonded peers
-		//   For secure connections this should change. 
+		//   For secure connections this should change.
+		
+		//TODO: Retrieve the remembered groups here
 		return new HashSet<Device>();
 	}
 
@@ -314,6 +323,12 @@ public class WifiService extends AbstractCommunicationService {
 	        	NetworkInfo networkInfo = (NetworkInfo) intent
 	                    .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
 
+	        	WifiP2pInfo wifiInfo = (WifiP2pInfo) intent
+	        			.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_INFO);
+	        	
+	        	Log.d(TAG, networkInfo.toString());
+	        	Log.d(TAG, wifiInfo.toString());
+	        	
 	            if (networkInfo.isConnected()) {
 	            	Log.d(TAG, "Requesting Connection Info");
 	                // we are connected with the other device, request connection                                 
@@ -328,13 +343,17 @@ public class WifiService extends AbstractCommunicationService {
 				            if(D) Log.d(TAG, "Server Started");
 				       
 				            //TODO: Make port configurable
-				            startAcceptThread(8988);				     
+				            startAcceptThread(8988);
+				            setState(STATE_LISTEN);
 				        } else if (info.groupFormed) {
 				            // The other device acts as the client.                                                                             
 				            if(D) Log.d(TAG, "Client Started");
 				            
 				            String host = info.groupOwnerAddress.getHostAddress();
 				            startConnectThread(host, 8988, true);
+				        }
+				        else {
+				        	Log.e(TAG, "Group not formed");
 				        }
 
 						
@@ -343,6 +362,7 @@ public class WifiService extends AbstractCommunicationService {
 	            } else {
 	                // It's a disconnect
 	            	//TODO: Handle disconnect
+	            	Log.e(TAG, "Possible disconnect");
 	                //activity.resetData();
 	            }
 
@@ -418,6 +438,7 @@ public class WifiService extends AbstractCommunicationService {
      * @param secure Socket Security type - Secure (true) , Insecure (false)
      */
     public synchronized void startConnectThread(String address, int port, boolean secure) {
+    	//TODO: Why is the connect thread called twice!!
         if (D) Log.d(TAG, "connect to: " + device);
 
         // Don't throw out connections if we are already connected
@@ -436,9 +457,10 @@ public class WifiService extends AbstractCommunicationService {
 //        if (mConnectedThread != null) {mConnectedThread.cancel(); mConnectedThread = null;}
 
         // Start the thread to connect with the given device
-        mConnectThread = new ConnectThread(address, port, secure);
-        mConnectThread.start();
         setState(STATE_CONNECTING);
+                
+        mConnectThread = new ConnectThread(address, port, secure);
+        mConnectThread.start();        
     }
     
     /**
@@ -497,7 +519,13 @@ public class WifiService extends AbstractCommunicationService {
                 } else {
                     tmp = new ServerSocket(port);
                 }
-            } catch (IOException e) {
+            }
+            catch (BindException e) {
+            	Log.e(TAG, "Server Socket Failed");
+            	Log.e(TAG, "listen() failed could not bind to port: " + port, e);
+            }
+            catch (IOException e) {
+            	Log.e(TAG, "Server Socket Failed");
                 Log.e(TAG, "Socket Type: " + mSocketType + "listen() failed", e);
             }
             
@@ -513,13 +541,15 @@ public class WifiService extends AbstractCommunicationService {
             // Listen to the server socket if we're not connected
             while (mState != STATE_CONNECTED) {
                 try {
-                    // This is a blocking call and will only return on a
-                    // successful connection or an exception
+                    
                 	if(mmServerSocket == null){
+                		Log.e(TAG, "Accet socket did not bind");
                 		break;
                 	}
-                	
+                	// This is a blocking call and will only return on a
+                    // successful connection or an exception
                     socket = mmServerSocket.accept();
+
                 } catch (IOException e) {
                     Log.e(TAG, "Socket Type: " + mSocketType + "accept() failed", e);
                     break;
@@ -532,6 +562,7 @@ public class WifiService extends AbstractCommunicationService {
                         case STATE_LISTEN:
                         case STATE_CONNECTING:
                             // Situation normal. Start the connected thread.
+                        	if(D) Log.i(TAG,"Socket accepted start connected thread");
                             connected(socket,
                                     mSocketType);
                             break;
@@ -539,21 +570,23 @@ public class WifiService extends AbstractCommunicationService {
                         case STATE_CONNECTED:
                             // Either not ready or already connected. Terminate new socket.
                             try {
+                            	if(D) Log.d(TAG, "Already connected, closing socket");
                                 socket.close();
                             } catch (IOException e) {
                                 Log.e(TAG, "Could not close unwanted socket", e);
                             }
-                            break;
+                            return; 
                         }
                     }
                 }
+                else if(D) Log.d(TAG, "Accept socket returned null");
             }
             if (D) Log.i(TAG, "END mAcceptThread, socket Type: " + mSocketType);
 
         }
         
         public void cancel() {
-            if (D) Log.d(TAG, "Socket Type" + mSocketType + "cancel " + this);
+            if (D) Log.d(TAG, "Accept thread cancel. Socket Type" + mSocketType);
             try {
                 mmServerSocket.close();
             } catch (IOException e) {
@@ -598,17 +631,17 @@ public class WifiService extends AbstractCommunicationService {
         }
 
         public void run() {
-            Log.i(TAG, "BEGIN mConnectThread SocketType:" + mSocketType);
+        	Log.i(TAG, "BEGIN mConnectThread SocketType:" + mSocketType);
             setName("ConnectThread" + mSocketType);
 
-            // Always cancel discovery because it will slow down a connection
+            // Always cancel discovery) because it will slow down a connection
             //TODO: Cancel discovery?
 
             // Make a connection to the Socket
             try {
                 // This is a blocking call and will only return on a
-                // successful connection or an exception
-                mmSocket.connect((new InetSocketAddress(host, port)), SOCKET_TIMEOUT);
+                // successful connection or an exception            	
+                mmSocket.connect((new InetSocketAddress(host, port)));//, SOCKET_TIMEOUT);
             } catch (IOException e) {
                 // Close the socket
                 try {
@@ -628,9 +661,11 @@ public class WifiService extends AbstractCommunicationService {
 
             // Start the connected thread
             connected(mmSocket, mSocketType);
+            Log.i(TAG, "END mConnectThread SocketType:" + mSocketType);
         }
 
         public void cancel() {
+        	if(D) Log.d(TAG, "Canceling connect thread");
         	if (mmSocket != null) {
                 if (mmSocket.isConnected()) {
                     try {
@@ -666,7 +701,8 @@ public class WifiService extends AbstractCommunicationService {
             
             // Get the BluetoothSocket input and output streams
             try {
-                tmpIn = new DataInputStream( socket.getInputStream() );
+            	//TODO: Investigate performance difference when using buffered input stream (probably nothing for network)            
+            	tmpIn = new DataInputStream( socket.getInputStream() );
                 tmpOut = new DataOutputStream( socket.getOutputStream() );
                 
             } catch (StreamCorruptedException e) {
@@ -734,7 +770,7 @@ public class WifiService extends AbstractCommunicationService {
         }
 
 		public void run() {
-            Log.i(TAG, "BEGIN mConnectedThread");
+			Log.i(TAG, "BEGIN mConnectedThread");
             
             int bytes;
 			
@@ -760,15 +796,22 @@ public class WifiService extends AbstractCommunicationService {
 							//TODO: possibly throw here
 						}
                     }
-                } catch (IOException e) {
+                } 
+            	//catch(EOFException e){
+                   //Log.e(TAG, "Less bytes then expected", e);             
+                //} 
+            	catch (IOException e) {
                     Log.e(TAG, "disconnected", e);
                     connectionLost();
                     break;
                 }
         	}
+            
+            Log.i(TAG, "END mConnectedThread");
         }
 
         public void cancel() {
+        	if(D) Log.d(TAG, "Canceling connected thread");
             try {
                 mmSocket.close();
             } catch (IOException e) {

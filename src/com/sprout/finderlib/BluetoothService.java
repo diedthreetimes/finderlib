@@ -383,11 +383,13 @@ public class BluetoothService extends AbstractCommunicationService {
                         case STATE_CONNECTED:
                             // Either not ready or already connected. Terminate new socket.
                             try {
-                                socket.close();
+                                socket.close();                             
                             } catch (IOException e) {
                                 Log.e(TAG, "Could not close unwanted socket", e);
                             }
-                            break;
+                            
+                            //TODO: Should we really be returning here?
+                            return;              
                         }
                     }
                 }

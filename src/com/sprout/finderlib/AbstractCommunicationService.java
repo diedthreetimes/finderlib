@@ -20,7 +20,7 @@ public abstract class AbstractCommunicationService implements
 	protected Context mContext;
 	
 	private static final String TAG = "AbstractCommunicationService";
-    private static final boolean D = false;
+    private static final boolean D = true;
 	
 	
     /**
@@ -59,7 +59,7 @@ public abstract class AbstractCommunicationService implements
      * Indicate that the connection attempt failed and notify the UI Activity.
      */
     protected void connectionFailed() {
-    	
+    	if(D) Log.d(TAG, "Connection to the device failed");
         // Send a failure message back to the Activity
         Message msg = mHandler.obtainMessage(MESSAGE_TOAST);
         Bundle bundle = new Bundle();
@@ -76,6 +76,7 @@ public abstract class AbstractCommunicationService implements
      * Indicate that the connection was lost and notify the UI Activity.
      */
     protected void connectionLost() {
+    	if(D) Log.d(TAG, "Connection to the device lost");
     	// Send a failure message back to the Activity
         Message msg = mHandler.obtainMessage(MESSAGE_TOAST);
         Bundle bundle = new Bundle();

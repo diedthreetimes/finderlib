@@ -40,9 +40,15 @@ public interface CommunicationService {
     public void setHandler(Handler handler);
     public int getState();
     
+    /**
+     * start discovery process
+     */
     public void start();
     public void connect(String address, boolean secure);
     public void stop();
+    /**
+     * pause discovery process
+     */
     public void pause();
     public void resume();
     

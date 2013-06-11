@@ -5,7 +5,6 @@ import java.math.BigInteger;
 import org.spongycastle.asn1.nist.NISTNamedCurves;
 import org.spongycastle.math.ec.ECPoint;
 
-import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;

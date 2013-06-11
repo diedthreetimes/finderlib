@@ -236,6 +236,7 @@ public class BluetoothService extends AbstractCommunicationService {
      * Stop all threads
      */
     public synchronized void stop() {
+    	pause();
         if (D) Log.d(TAG, "stop");
         setState(STATE_STOPPED);
 
@@ -540,7 +541,9 @@ public class BluetoothService extends AbstractCommunicationService {
 		public byte[] read() {
 			// read should not be used if packets are being read directly off the wire
 			if(mForwardRead){
-				return null; //TODO: Raise here?
+				Log.e(TAG,"Can not perform syncrhomous read with readloop set");
+				return null;
+				// throw new Exception("Can't call read in serial mode");
 			}
 			
 			try {

@@ -5,6 +5,7 @@ gen/
 
 *.apk
 *.ap_
+*.dex
 
 local.properties
 
@@ -17,3 +18,5 @@ local.properties
 *.swp
 #.metadata
 *.launch
+.classpath
+.project

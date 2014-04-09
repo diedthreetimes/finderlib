@@ -1,4 +1,4 @@
-package com.sprout.finderlib;
+package com.sprout.finderlib.communication;
 
 import android.bluetooth.BluetoothDevice;
 import android.net.wifi.p2p.WifiP2pDevice;

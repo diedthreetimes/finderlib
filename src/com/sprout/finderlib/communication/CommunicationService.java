@@ -1,4 +1,4 @@
-package com.sprout.finderlib;
+package com.sprout.finderlib.communication;
 
 import java.lang.ref.WeakReference;
 import java.math.BigInteger;
@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.spongycastle.math.ec.ECPoint;
+
 
 import android.os.Handler;
 import android.text.format.Time;

@@ -1,10 +1,14 @@
-package com.sprout.finderlib;
+package com.sprout.finderlib.crypto;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.List;
+
+import com.sprout.finderlib.communication.BluetoothService;
+import com.sprout.finderlib.communication.BluetoothServiceLogger;
+import com.sprout.finderlib.utils.StopWatch;
 
 import android.app.Service;
 import android.content.Intent;

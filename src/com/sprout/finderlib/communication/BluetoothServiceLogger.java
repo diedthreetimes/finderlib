@@ -1,4 +1,4 @@
-package com.sprout.finderlib;
+package com.sprout.finderlib.communication;
 
 import android.content.Context;
 import android.os.Handler;

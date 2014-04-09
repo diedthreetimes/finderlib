@@ -1,4 +1,4 @@
-package com.sprout.finderlib;
+package com.sprout.finderlib.communication;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

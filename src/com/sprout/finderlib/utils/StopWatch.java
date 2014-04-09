@@ -1,4 +1,4 @@
-package com.sprout.finderlib;
+package com.sprout.finderlib.utils;
 
 /*
 Copyright (c) 2005, Corey Goldberg

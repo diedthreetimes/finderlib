@@ -1,9 +1,16 @@
-package com.sprout.finderlib;
+package com.sprout.finderlib.ui.communication;
 
 import android.app.Activity;
 import android.os.Bundle;
 
 import java.util.Set;
+
+import com.sprout.finderlib.R;
+import com.sprout.finderlib.R.id;
+import com.sprout.finderlib.R.layout;
+import com.sprout.finderlib.R.string;
+import com.sprout.finderlib.communication.CommunicationService;
+import com.sprout.finderlib.communication.Device;
 
 import android.content.Intent;
 import android.util.Log;

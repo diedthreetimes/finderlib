@@ -1,4 +1,4 @@
-package com.sprout.finderlib;
+package com.sprout.finderlib.communication;
 
 /**
  * This service is largely just pulled from the android docs and handles
@@ -22,6 +22,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import org.spongycastle.asn1.nist.NISTNamedCurves;
 import org.spongycastle.math.ec.ECPoint;
+
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;

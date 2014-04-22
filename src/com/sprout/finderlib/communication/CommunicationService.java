@@ -53,6 +53,8 @@ public interface CommunicationService {
     public void pause();
     public void resume();
     
+    // TODO: Add methods for reading and writing collections
+    
     public void write(byte[] out);
     public void write(String buffer);
     public void write(BigInteger out);

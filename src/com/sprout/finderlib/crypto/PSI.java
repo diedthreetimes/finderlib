@@ -3,10 +3,11 @@ package com.sprout.finderlib.crypto;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import com.sprout.finderlib.communication.BluetoothService;
+import com.sprout.finderlib.communication.CommunicationService;
 
 import android.util.Log;
 
@@ -18,7 +19,7 @@ public class PSI extends AbstractPSIProtocol {
     private final boolean D = true;
     
 	@Override
-	protected String conductClientTest(BluetoothService s, List<String> input) {
+	protected List<String> conductClientTest(CommunicationService s, Collection<String> input) {
 		// OFFLINE PHASE
     	offlineWatch.start();
     	BigInteger rc  = randomRange(q); // Secret 1
@@ -80,7 +81,7 @@ public class PSI extends AbstractPSIProtocol {
 	}
 
 	@Override
-	protected String conductServerTest(BluetoothService s, List<String> input) {
+	protected List<String> conductServerTest(CommunicationService s, Collection<String> input) {
 		// OFFLINE PHASE
     	offlineWatch.start();
     	BigInteger rs  = randomRange(q); // Secret 1
@@ -127,7 +128,9 @@ public class PSI extends AbstractPSIProtocol {
     	onlineWatch.pause();
         Log.i(TAG, "Server online phase completed in " + onlineWatch.getElapsedTime()+ " miliseconds.");
     	
-		return "Server's result: " + s.readString(); // threshold this value
+        List<String> ret = new ArrayList<String>();
+        ret.add("Server's result: " + s.readString());
+		return ret; // threshold this value
 	}
 
 }

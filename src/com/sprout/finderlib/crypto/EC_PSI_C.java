@@ -3,12 +3,13 @@ package com.sprout.finderlib.crypto;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
 import org.spongycastle.math.ec.ECPoint;
 
-import com.sprout.finderlib.communication.BluetoothService;
+import com.sprout.finderlib.communication.CommunicationService;
 
 import android.util.Log;
 
@@ -26,7 +27,8 @@ public class EC_PSI_C extends AbstractECProtocol {
     private final String TAG = "EC_PSI_C";
     private final boolean D = true;
 	
-	protected String conductClientTest(BluetoothService s, List<String> input){
+    @Override
+	protected List<String> conductClientTest(CommunicationService s, Collection<String> input){
     	// OFFLINE PHASE
     	offlineWatch.start();
     	BigInteger rc  = randomRange(n); // Secret 1
@@ -87,12 +89,15 @@ public class EC_PSI_C extends AbstractECProtocol {
     	onlineWatch.pause();
         //Log.i(TAG, "Client online phase completed in " + onlineWatch.getElapsedTime() + " miliseconds.");
     	
-		return String.valueOf(sharedLengths);
+    	List<String> ret = new ArrayList<String>();
+    	ret.add(String.valueOf(sharedLengths));
+    	return ret;
     }
     
 	
 	//TODO: Implment from here
-    protected String conductServerTest(BluetoothService s, List<String> input) {
+    @Override
+    protected List<String> conductServerTest(CommunicationService s, Collection<String> input) {
     	// OFFLINE PHASE
     	offlineWatch.start();
     	BigInteger rs  = randomRange(n); // Secret 1
@@ -152,7 +157,10 @@ public class EC_PSI_C extends AbstractECProtocol {
     	onlineWatch.pause();
         //Log.i(TAG, "Server online phase completed in " + onlineWatch.getElapsedTime()+ " miliseconds.");
     	
-		return s.readString();
+    	List<String> ret = new ArrayList<String>();
+    	ret.add(s.readString());
+    	
+		return ret;
     }
 
 }

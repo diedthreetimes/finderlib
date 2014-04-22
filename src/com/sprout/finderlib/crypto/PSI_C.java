@@ -3,17 +3,18 @@ package com.sprout.finderlib.crypto;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import com.sprout.finderlib.communication.BluetoothService;
+import com.sprout.finderlib.communication.CommunicationService;
 
 import android.util.Log;
 
 /**
  * This class does all the work for conducting the secure communication
  * with another user. It does not handle any communication directly, but instead
- * relies on a Object that implements an BluetoothService's connected thread api
+ * relies on a Object that implements an CommunicationService's connected thread api
  * @author skyf
  *
  */
@@ -26,7 +27,8 @@ public class PSI_C extends AbstractPSIProtocol {
     private final boolean D = false;
     
     // Actually perform the test (these will be overides from a testing base class (and can be the same function)
-    protected String conductClientTest(BluetoothService s, List<String> input){
+    @Override
+    protected List<String> conductClientTest(CommunicationService s, Collection<String> input){
     	// OFFLINE PHASE
     	offlineWatch.start();
     	BigInteger rc  = randomRange(q); // Secret 1
@@ -86,10 +88,14 @@ public class PSI_C extends AbstractPSIProtocol {
     	onlineWatch.pause();
         //Log.i(TAG, "Client online phase completed in " + onlineWatch.getElapsedTime() + " miliseconds.");
     	
-		return String.valueOf(sharedLengths);
+    	List<String> ret = new ArrayList<String>();
+    	ret.add(String.valueOf(sharedLengths));
+    	
+		return ret;
     }
     
-    protected String conductServerTest(BluetoothService s, List<String> input) {
+    @Override
+    protected List<String> conductServerTest(CommunicationService s, Collection<String> input) {
     	// OFFLINE PHASE
     	offlineWatch.start();
     	BigInteger rs  = randomRange(q); // Secret 1
@@ -149,6 +155,8 @@ public class PSI_C extends AbstractPSIProtocol {
     	onlineWatch.pause();
         //Log.i(TAG, "Server online phase completed in " + onlineWatch.getElapsedTime()+ " miliseconds.");
     	
-		return s.readString();
+    	List<String> ret = new ArrayList<String>();
+    	ret.add(s.readString());
+		return ret;
     }
 }

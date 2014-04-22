@@ -4,10 +4,12 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Collection;
 import java.util.List;
 
 import com.sprout.finderlib.communication.BluetoothService;
 import com.sprout.finderlib.communication.BluetoothServiceLogger;
+import com.sprout.finderlib.communication.CommunicationService;
 import com.sprout.finderlib.utils.StopWatch;
 
 import android.app.Service;
@@ -95,8 +97,8 @@ public abstract class PrivateProtocol extends Service {
      * @param testName The application specific name for this test
      * @return The result of the test
      */
-    public String conductTest(String testName, BluetoothService s, boolean client, List<String> inputSet) {
-    	String ret = null;
+    public Collection<String> conductTest(String testName, CommunicationService s, boolean client, List<String> inputSet) {
+    	Collection<String> ret = null;
     	
     	//Switch to synchronous message reading. 
     	s.setReadLoop(false); // this may take a message to take affect
@@ -154,14 +156,12 @@ public abstract class PrivateProtocol extends Service {
     	
     	
     	
-    	return ret;
-    	
-    	
+    	return ret;   	
     }
     
     
     // Tell the client we heard them
-    private void initiateServer(String testName, BluetoothService s){
+    private void initiateServer(String testName, CommunicationService s){
     	if(D) Log.d(TAG, "Server started");
 		// Acknowledge the start message
 		s.write(ACK_START_MESSAGE); //TODO: we probably don't need any acks look closer
@@ -191,7 +191,7 @@ public abstract class PrivateProtocol extends Service {
     }
     
     // Tell the server we are listening
-    private void initiateClient(String testName, BluetoothService s) throws DoubleClientException{
+    private void initiateClient(String testName, CommunicationService s) throws DoubleClientException{
     	// Say hello
     	s.write(START_TEST_MESSAGE + SEPERATOR + testName);
 
@@ -233,8 +233,8 @@ public abstract class PrivateProtocol extends Service {
     	}
     }
     
-    protected abstract String conductClientTest(BluetoothService s, List<String> input);
-    protected abstract String conductServerTest(BluetoothService s, List<String> input);
+    protected abstract Collection<String> conductClientTest(CommunicationService s, Collection<String> input);
+    protected abstract Collection<String> conductServerTest(CommunicationService s, Collection<String > input);
     
     // Utility functions
     

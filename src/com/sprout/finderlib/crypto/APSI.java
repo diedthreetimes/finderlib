@@ -2,9 +2,10 @@ package com.sprout.finderlib.crypto;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
-import com.sprout.finderlib.communication.BluetoothService;
+import com.sprout.finderlib.communication.CommunicationService;
 
 import android.util.Log;
 
@@ -65,7 +66,7 @@ public class APSI extends AbstractPSIProtocol {
 	private CA ca;
 	
 	@Override
-	protected String conductClientTest(BluetoothService s, List<String> input) {
+	protected List<String> conductClientTest(CommunicationService s, Collection<String> input) {
 		List<BigInteger> sigs = new ArrayList<BigInteger>();
 		for(String i: input){
 			sigs.add(ca.sign(hash(i)));
@@ -132,11 +133,15 @@ public class APSI extends AbstractPSIProtocol {
     	
     	//onlineWatch.pause();
     	
-		return String.valueOf(sharedLengths);
+    	
+    	List<String> ret = new ArrayList<String>();
+    	ret.add( String.valueOf(sharedLengths));
+    	
+		return ret;
 	}
 
 	@Override
-	protected String conductServerTest(BluetoothService s, List<String> input) {
+	protected List<String> conductServerTest(CommunicationService s, Collection<String> input) {
 		offlineWatch.start();
 		BigInteger rs = randomRange(N.divide(BigInteger.valueOf(2)));
 		BigInteger Y = g.modPow(BigInteger.valueOf(2).multiply(e).multiply(rs), N);
@@ -170,7 +175,10 @@ public class APSI extends AbstractPSIProtocol {
 		
 		// onlineWatch.pause();
 		
-		return s.readString();
+		List<String> ret = new ArrayList<String>();
+		ret.add(s.readString());
+		
+		return ret;
 	}
 	
 	// Full domain hash

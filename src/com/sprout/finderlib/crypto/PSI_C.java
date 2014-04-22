@@ -21,14 +21,22 @@ import android.util.Log;
 
 // At the moment we use the built in BigInteger implementation to do our calculations.
 // TODO: Benchmark an openssl/gmp version
-public class PSI_C extends AbstractPSIProtocol {
+public class PSI_C extends AbstractPSIProtocol <String, Void, Integer> {
 	// Debugging
     private final String TAG = "PSI_C";
     private final boolean D = false;
     
+    
+	public PSI_C(CommunicationService s, boolean client) {
+		super("PSI_C", s, client);
+	}
+	public PSI_C(String testName, CommunicationService s, boolean client) {
+		super(testName, s, client);
+	}
+    
     // Actually perform the test (these will be overides from a testing base class (and can be the same function)
     @Override
-    protected List<String> conductClientTest(CommunicationService s, Collection<String> input){
+    protected Integer conductClientTest(CommunicationService s, String... input){
     	// OFFLINE PHASE
     	offlineWatch.start();
     	BigInteger rc  = randomRange(q); // Secret 1
@@ -88,14 +96,11 @@ public class PSI_C extends AbstractPSIProtocol {
     	onlineWatch.pause();
         //Log.i(TAG, "Client online phase completed in " + onlineWatch.getElapsedTime() + " miliseconds.");
     	
-    	List<String> ret = new ArrayList<String>();
-    	ret.add(String.valueOf(sharedLengths));
-    	
-		return ret;
+		return sharedLengths;
     }
     
     @Override
-    protected List<String> conductServerTest(CommunicationService s, Collection<String> input) {
+    protected Integer conductServerTest(CommunicationService s, String... input) {
     	// OFFLINE PHASE
     	offlineWatch.start();
     	BigInteger rs  = randomRange(q); // Secret 1
@@ -155,8 +160,6 @@ public class PSI_C extends AbstractPSIProtocol {
     	onlineWatch.pause();
         //Log.i(TAG, "Server online phase completed in " + onlineWatch.getElapsedTime()+ " miliseconds.");
     	
-    	List<String> ret = new ArrayList<String>();
-    	ret.add(s.readString());
-		return ret;
+		return Integer.valueOf(s.readString());
     }
 }

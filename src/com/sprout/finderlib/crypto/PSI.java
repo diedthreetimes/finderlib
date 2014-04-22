@@ -13,13 +13,21 @@ import android.util.Log;
 
 //TODO: Finish implementing this!!
 
-public class PSI extends AbstractPSIProtocol {
+public abstract class PSI extends AbstractPSIProtocol <String, Void, List<String> > {
 	// Debugging
     private final String TAG = "PSI";
     private final boolean D = true;
     
+    public PSI(CommunicationService s, boolean client) {
+    	super("PSI", s, client);
+    }
+    
+    public PSI(String testName, CommunicationService s, boolean client) {
+		super(testName, s, client);
+	}
+    
 	@Override
-	protected List<String> conductClientTest(CommunicationService s, Collection<String> input) {
+	protected List<String> conductClientTest(CommunicationService s, String... input) {
 		// OFFLINE PHASE
     	offlineWatch.start();
     	BigInteger rc  = randomRange(q); // Secret 1
@@ -81,7 +89,7 @@ public class PSI extends AbstractPSIProtocol {
 	}
 
 	@Override
-	protected List<String> conductServerTest(CommunicationService s, Collection<String> input) {
+	protected List<String> conductServerTest(CommunicationService s, String... input) {
 		// OFFLINE PHASE
     	offlineWatch.start();
     	BigInteger rs  = randomRange(q); // Secret 1

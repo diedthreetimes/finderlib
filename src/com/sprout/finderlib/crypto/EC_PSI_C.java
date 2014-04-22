@@ -21,14 +21,20 @@ import android.util.Log;
 
 //TODO: See note in AbstractECProtocol about refactoring this
 
-public class EC_PSI_C extends AbstractECProtocol {
-
+public class EC_PSI_C extends AbstractECProtocol <String, Void, Integer > {
 	// Debugging
     private final String TAG = "EC_PSI_C";
     private final boolean D = true;
 	
+	public EC_PSI_C(CommunicationService s, boolean client) {
+		super("EC_PSI_C", s, client);
+	}
+	public EC_PSI_C(String testName, CommunicationService s, boolean client) {
+		super(testName, s, client);
+	}
+    
     @Override
-	protected List<String> conductClientTest(CommunicationService s, Collection<String> input){
+	protected Integer conductClientTest(CommunicationService s, String... input){
     	// OFFLINE PHASE
     	offlineWatch.start();
     	BigInteger rc  = randomRange(n); // Secret 1
@@ -89,15 +95,13 @@ public class EC_PSI_C extends AbstractECProtocol {
     	onlineWatch.pause();
         //Log.i(TAG, "Client online phase completed in " + onlineWatch.getElapsedTime() + " miliseconds.");
     	
-    	List<String> ret = new ArrayList<String>();
-    	ret.add(String.valueOf(sharedLengths));
-    	return ret;
+    	return sharedLengths;
     }
     
 	
 	//TODO: Implment from here
     @Override
-    protected List<String> conductServerTest(CommunicationService s, Collection<String> input) {
+    protected Integer conductServerTest(CommunicationService s, String... input) {
     	// OFFLINE PHASE
     	offlineWatch.start();
     	BigInteger rs  = randomRange(n); // Secret 1
@@ -157,10 +161,7 @@ public class EC_PSI_C extends AbstractECProtocol {
     	onlineWatch.pause();
         //Log.i(TAG, "Server online phase completed in " + onlineWatch.getElapsedTime()+ " miliseconds.");
     	
-    	List<String> ret = new ArrayList<String>();
-    	ret.add(s.readString());
-    	
-		return ret;
+		return Integer.valueOf(s.readString());
     }
 
 }

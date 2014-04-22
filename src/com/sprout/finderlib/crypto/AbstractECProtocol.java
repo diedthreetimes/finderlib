@@ -1,10 +1,13 @@
 package com.sprout.finderlib.crypto;
 
 import java.math.BigInteger;
+import java.util.List;
 
 import org.spongycastle.asn1.nist.NISTNamedCurves;
 import org.spongycastle.asn1.x9.X9ECParameters;
 import org.spongycastle.math.ec.ECPoint;
+
+import com.sprout.finderlib.communication.CommunicationService;
 
 import android.util.Log;
 
@@ -16,9 +19,9 @@ import android.util.Log;
 
 //TODO: We should refator this, as most of the underlying protocols work for any group
 //        We should add an interface to groups, and allow the protocol to depend on any group
-//        In this way we can have PSI_C_EC and PSI_C_Algy depend on PSI_C (which could be abstract)
+//        In this way we can have PSI_C_EC and PSI_C_Elgamal depend on PSI_C (which could be abstract)
 
-public abstract class AbstractECProtocol extends PrivateProtocol {
+public abstract class AbstractECProtocol<Params, Progress, Result> extends PrivateProtocol<Params, Progress, Result> {
 	// Debug info
 	private final String TAG = "AbstractECProtocol";
 	private final boolean D = true;
@@ -26,6 +29,11 @@ public abstract class AbstractECProtocol extends PrivateProtocol {
 	 //public keys
     protected ECPoint g;
     protected BigInteger n;
+    
+    
+	public AbstractECProtocol(String testName, CommunicationService s, boolean client) {
+		super(testName, s, client);
+	}
 	
 	@Override
 	protected void loadSharedKeys() {

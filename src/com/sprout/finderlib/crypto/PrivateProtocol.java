@@ -4,18 +4,13 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Collection;
-import java.util.List;
 
-import com.sprout.finderlib.communication.BluetoothService;
+
 import com.sprout.finderlib.communication.BluetoothServiceLogger;
 import com.sprout.finderlib.communication.CommunicationService;
 import com.sprout.finderlib.utils.StopWatch;
 
-import android.app.Service;
-import android.content.Intent;
-import android.os.Binder;
-import android.os.IBinder;
+import android.os.AsyncTask;
 import android.util.Log;
 
 /**
@@ -28,7 +23,7 @@ import android.util.Log;
 
 
 // This class provides the utilities needed for the other types of protocols
-public abstract class PrivateProtocol extends Service {
+public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTask<Params, Progress, Result> {
 	// Debugging
     private final String TAG = "PrivateProtocol";
     private final boolean D = false;
@@ -46,45 +41,22 @@ public abstract class PrivateProtocol extends Service {
     //      It is also worht noting that the benchmarking can not be threaded
     //      The timers are not thread safe
     protected final boolean benchmark = true;
-    private final int NUM_TRIALS = 1;
+    private final int NUM_TRIALS = 1;    
     
-    // Exceptions
-    @SuppressWarnings("serial")
-	class DoubleClientException extends Exception{}
+    protected boolean client;
+    protected String testName;
+    protected CommunicationService msgService;
     
-	/**
-     * Class for clients to access.  Because we know this service always
-     * runs in the same process as its clients, we don't need to deal with
-     * IPC.
-     */
-    public class LocalBinder extends Binder {
-         PrivateProtocol getService() {
-            return PrivateProtocol.this;
-        }
-    }
-    
-    @Override
-    public void onCreate(){
+
+    public PrivateProtocol(String testName, CommunicationService s, boolean client) {
     	loadSharedKeys();
     	onlineWatch = new StopWatch();
     	offlineWatch = new StopWatch();
+    	
+    	msgService = s;
+    	this.client = client;
+    	this.testName = testName;
     }
-    
-//    @Override //TODO: do we need this? I don't think so since we only allow binding to the service
-//    public int onStartCommand(Intent intent, int flags, int startId) {
-//    	if(D)
-//    		Log.d(TAG, "Received start id " + startId + ": " + intent);
-//    	
-//        // We want to ensure all intents are processed
-//        return START_REDELIVER_INTENT;
-//    }
-	
-    // This is the object that receives interactions from clients.
-    private final IBinder mBinder = new LocalBinder();
-    
-	@Override public IBinder onBind(Intent intent) {
-		return mBinder;
-	}
     	
     // Conduct the Test
     /**
@@ -97,8 +69,8 @@ public abstract class PrivateProtocol extends Service {
      * @param testName The application specific name for this test
      * @return The result of the test
      */
-    public Collection<String> conductTest(String testName, CommunicationService s, boolean client, List<String> inputSet) {
-    	Collection<String> ret = null;
+    public Result conductTest(String testName, CommunicationService s, boolean client, Params... inputSet) {
+    	Result ret = null;
     	
     	//Switch to synchronous message reading. 
     	s.setReadLoop(false); // this may take a message to take affect
@@ -130,7 +102,7 @@ public abstract class PrivateProtocol extends Service {
 			    		Log.i(TAG, "Both users clicked at the same time");
 			    		
 			    		//TODO: Don't use flow control here
-			    		//TODO: one user can be forced to always be the server and thus never learn the result
+			    		// one user can be forced to always be the server and thus never learn the result
 			    		//          to fix this security issue simply ensure the one who clicks is always the server
 			    		client = !client;
 			    		
@@ -233,8 +205,15 @@ public abstract class PrivateProtocol extends Service {
     	}
     }
     
-    protected abstract Collection<String> conductClientTest(CommunicationService s, Collection<String> input);
-    protected abstract Collection<String> conductServerTest(CommunicationService s, Collection<String > input);
+    // AsyncTask Functions
+    protected Result doInBackground(Params... params){
+    	return conductTest(testName, msgService, client, params);
+    }
+    
+    
+    
+    protected abstract Result conductClientTest(CommunicationService s, Params... input);
+    protected abstract Result conductServerTest(CommunicationService s, Params... input);
     
     // Utility functions
     

@@ -9,7 +9,7 @@ import com.sprout.finderlib.communication.CommunicationService;
 
 import android.util.Log;
 
-public class APSI extends AbstractPSIProtocol {
+public class APSI extends AbstractPSIProtocol <String, Void, List<String> > {
 
 	// Debugging
     private final String TAG = "APSI";
@@ -17,6 +17,15 @@ public class APSI extends AbstractPSIProtocol {
 	
 	// Public keys
 	protected BigInteger N, e;
+	
+	
+	public APSI(CommunicationService s, boolean client) {
+		super("APSI", s, client);
+	}
+	
+	public APSI(String testName, CommunicationService s, boolean client) {
+		super(testName, s, client);
+	}
 	
 	
 	// TODO: This class may belong somewhere else (and have non static methods
@@ -66,7 +75,7 @@ public class APSI extends AbstractPSIProtocol {
 	private CA ca;
 	
 	@Override
-	protected List<String> conductClientTest(CommunicationService s, Collection<String> input) {
+	protected List<String> conductClientTest(CommunicationService s, String... input) {
 		List<BigInteger> sigs = new ArrayList<BigInteger>();
 		for(String i: input){
 			sigs.add(ca.sign(hash(i)));
@@ -141,7 +150,7 @@ public class APSI extends AbstractPSIProtocol {
 	}
 
 	@Override
-	protected List<String> conductServerTest(CommunicationService s, Collection<String> input) {
+	protected List<String> conductServerTest(CommunicationService s, String... input) {
 		offlineWatch.start();
 		BigInteger rs = randomRange(N.divide(BigInteger.valueOf(2)));
 		BigInteger Y = g.modPow(BigInteger.valueOf(2).multiply(e).multiply(rs), N);
@@ -157,7 +166,7 @@ public class APSI extends AbstractPSIProtocol {
     	s.write("Offline DONE");
 		
 		onlineWatch.start();
-		s.write(String.valueOf(input.size()));
+		s.write(String.valueOf(input.length));
 		int clientSize = Integer.valueOf(s.readString());
 		
 		s.write(Y);

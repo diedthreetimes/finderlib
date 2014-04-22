@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.sprout.finderlib.communication.BluetoothService;
+import com.sprout.finderlib.communication.CommunicationService;
 
 import android.util.Log;
 
@@ -17,18 +18,22 @@ import android.util.Log;
  */
 
 public class PSI_C_Homo extends PSI_C {
-	
 	// Debugging
     private final String TAG = "Homomorphic PSI-C";
     private final boolean D = false;
     
     private SecureRandom rand;
     
-    public void onCreate(){
-    	Log.e(TAG, "+++ ON CREATE +++ ");
-    	super.onCreate();
-    	rand = new SecureRandom();
-    }
+    public PSI_C_Homo(CommunicationService s, boolean client) {
+		super("PSI_C_HOMO", s, client);
+		
+		rand = new SecureRandom();
+	}
+	public PSI_C_Homo(String testName, CommunicationService s, boolean client) {
+		super(testName, s, client);
+		
+		rand = new SecureRandom();
+	}
 	
     //TODO: Think about handling the actual encryption here
     //        Also think about moving this somewhere else
@@ -71,7 +76,8 @@ public class PSI_C_Homo extends PSI_C {
     }
     
  // Actually perform the test (these will be overides from a testing base class (and can be the same function)
-    protected String conductClientTest(BluetoothService s, List<String> inputs){
+    @Override 
+    protected Integer conductClientTest(CommunicationService s, String... inputs){
     	// OFFLINE PHASE
     	offlineWatch.start();
     	BigInteger x  = randomRange(q); // Secret 1
@@ -133,10 +139,11 @@ public class PSI_C_Homo extends PSI_C {
     	onlineWatch.pause();
         //Log.i(TAG, "Client online phase completed in " + onlineWatch.getElapsedTime() + " miliseconds.");
     	
-		return String.valueOf(numCommon);
+		return numCommon;
     }
     
-    protected String conductServerTest(BluetoothService s, List<String> inputs) {
+    @Override
+    protected Integer conductServerTest(CommunicationService s, String... inputs) {
     	// OFFLINE PHASE
     	offlineWatch.start();
     	// Generate the randoms for later along with the first half of the encryption 
@@ -199,6 +206,6 @@ public class PSI_C_Homo extends PSI_C {
         //Log.i(TAG, "Server online phase completed in " + onlineWatch.getElapsedTime()+ " miliseconds.");
     	
         // Return the result from the client
-		return s.readString();
+		return Integer.valueOf(s.readString());
     }
 }

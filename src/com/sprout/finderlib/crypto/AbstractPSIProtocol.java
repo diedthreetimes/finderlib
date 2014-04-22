@@ -2,10 +2,12 @@ package com.sprout.finderlib.crypto;
 
 import java.math.BigInteger;
 
+import com.sprout.finderlib.communication.CommunicationService;
+
 import android.util.Log;
 
 
-public abstract class AbstractPSIProtocol extends PrivateProtocol {
+public abstract class AbstractPSIProtocol<Params, Progress, Result> extends PrivateProtocol<Params, Progress, Result> {	
 	// Debug info
 	private final String TAG = "AbstractPSIProtocol";
 	private final boolean D = true;
@@ -15,6 +17,11 @@ public abstract class AbstractPSIProtocol extends PrivateProtocol {
 
     // t = (p-1)/q to hash into the group Z*p
     protected BigInteger t;
+    
+	public AbstractPSIProtocol(String testName, CommunicationService s, boolean client) {
+		super(testName, s, client);
+
+	}
     
  	// Load the common inputs, p q and g which are:
  	// p - a prime number

@@ -206,6 +206,7 @@ public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTa
     }
     
     // AsyncTask Functions
+    @Override
     protected Result doInBackground(Params... params){
     	return conductTest(testName, msgService, client, params);
     }

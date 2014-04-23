@@ -40,7 +40,7 @@ public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTa
     // TODO: Extract benchmarking into another class
     //      It is also worht noting that the benchmarking can not be threaded
     //      The timers are not thread safe
-    protected final boolean benchmark = true;
+    protected final boolean benchmark = false;
     private final int NUM_TRIALS = 1;    
     
     protected boolean client;
@@ -221,6 +221,10 @@ public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTa
     
     protected void reportTimers(boolean client){reportTimers(client, NUM_TRIALS);}
     protected void reportTimers(boolean client, int numTrials){
+    	
+    	if (!benchmark)
+    		return;
+    	
     	Log.i(TAG, "Trials completed: " + numTrials);
     	
     	String cl = client ? "Client" : "Server";

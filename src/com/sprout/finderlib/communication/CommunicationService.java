@@ -45,6 +45,7 @@ public interface CommunicationService {
      * start discovery process
      */
     public void start();
+    public void start(boolean secure);
     public void connect(String address, boolean secure);
     public void stop();
     /**

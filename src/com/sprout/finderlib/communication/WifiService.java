@@ -77,7 +77,7 @@ public class WifiService extends AbstractCommunicationService {
 	
 	//TODO: Work out using states and threads!!
 	@Override
-	public synchronized void start() {
+	public synchronized void start(boolean secure) {
 		if(D) Log.d(TAG, "Start");
 		resume();
 		

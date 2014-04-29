@@ -57,7 +57,7 @@ public class BluetoothService extends AbstractCommunicationService {
     private static final UUID MY_UUID_SECURE =
         UUID.fromString("6bc03610-4155-11e1-b86c-0800200c9a66");
     private static final UUID MY_UUID_INSECURE = // Secure threads are not allowed but left for debugging
-            UUID.fromString("8ce255c0-200a-11e0-ac64-0800200c9a66"); // PROBABLY NOT UNIQ
+            UUID.fromString("cf32cad0-cfcb-11e3-9c1a-0800200c9a66");
     
     // Maximum reconnect attempts
     private static final int MAX_RETRY = 2;
@@ -92,19 +92,22 @@ public class BluetoothService extends AbstractCommunicationService {
     /**
      * Start the communication service. Specifically start AcceptThread to begin a
      * session in listening (server) mode. Called by the Activity onResume() */
-    public synchronized void start() {
+    @Override
+    public synchronized void start(boolean secure) {
         if (D) Log.d(TAG, "start");
+        
+        mSecure = secure;
         
         resume();
 
-        startAcceptThread();
+        startAcceptThread(secure);
 
         mNumTries = 0;
         
         setState(STATE_LISTEN);
     }
     
-    private synchronized void startAcceptThread() {
+    private synchronized void startAcceptThread(boolean secure) {
     	// Cancel any thread attempting to make a connection
         if (mConnectThread != null) {mConnectThread.cancel(); mConnectThread = null;}
 
@@ -113,7 +116,7 @@ public class BluetoothService extends AbstractCommunicationService {
     	
     	// Start the thread to listen on a BluetoothServerSocket
         if (mSecureAcceptThread == null) {
-            mSecureAcceptThread = new AcceptThread(true);
+            mSecureAcceptThread = new AcceptThread(secure);
             mSecureAcceptThread.start();
         }
     }
@@ -132,7 +135,7 @@ public class BluetoothService extends AbstractCommunicationService {
     		return;
     	}
     	
-    	startAcceptThread();
+    	startAcceptThread(mSecure);
     	
     	setState(STATE_RETRY);
     	

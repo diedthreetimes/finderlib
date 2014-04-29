@@ -95,6 +95,10 @@ public abstract class AbstractCommunicationService implements
         mHandler.sendMessage(msg);
     }
     
+    public synchronized void start() {
+      start(true);
+    }
+    
     protected abstract void retry();
     
 	@Override

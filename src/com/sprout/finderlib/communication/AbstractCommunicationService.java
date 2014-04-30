@@ -135,6 +135,10 @@ public abstract class AbstractCommunicationService implements
      * @see #read()
      */
 	public String readString() {
+	  byte[] buf = read();
+	  if( buf == null || buf.length == 0 )
+	    return null;
+	  
 		return new String(read());
 	}
 

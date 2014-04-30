@@ -13,11 +13,6 @@
         android:theme="@style/AppTheme" >
         
         <activity android:name="com.sprout.finderlib.ui.DeviceList"/>
-        <service android:name="com.sprout.finderlib.crypto.PSI_C"/>
-        <service android:name="com.sprout.finderlib.crypto.PSI_C_Homo"/>
-        <service android:name="com.sprout.finderlib.crypto.PSI" />
-        <service android:name="com.sprout.finderlib.crypto.APSI" />
-        <service android:name="com.sprout.finderlib.crypto.EC_PSI_C"/>
     </application>
     
     <uses-permission android:name="android.permission.BLUETOOTH"/>

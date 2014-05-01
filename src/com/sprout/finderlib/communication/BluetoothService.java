@@ -86,6 +86,7 @@ public class BluetoothService extends AbstractCommunicationService {
         mIntentFilter = new IntentFilter();
         mIntentFilter.addAction(BluetoothDevice.ACTION_FOUND);
         mIntentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        mIntentFilter.addAction(BluetoothDevice.ACTION_UUID);
     }
     
     
@@ -630,7 +631,6 @@ public class BluetoothService extends AbstractCommunicationService {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-
             // When discovery finds a device
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 // Get the BluetoothDevice object from the Intent
@@ -641,7 +641,18 @@ public class BluetoothService extends AbstractCommunicationService {
                 }
             // When discovery is finished, change the Activity title
             } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+              // We may need to wait until discovery is completed before we can query for the UUID
+//              Log.i("\nGetting Services for " + device.getName() + ", " + device);
+//              if(!device.fetchUuidsWithSdp()) {
+//                out.append("\nSDP Failed for " + device.getName());
+//              }
             	callback.onDiscoveryComplete(true);
+            } else if(BluetoothDevice.ACTION_UUID.equals(action)) {
+              BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+              Parcelable[] uuidExtra = intent.getParcelableArrayExtra(BluetoothDevice.EXTRA_UUID);
+              for (int i=0; i<uuidExtra.length; i++) {
+                out.append("\n  Device: " + device.getName() + ", " + device + ", Service: " + uuidExtra[i].toString());
+              }
             }
         }
     };

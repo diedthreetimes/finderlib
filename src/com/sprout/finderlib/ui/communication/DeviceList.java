@@ -167,7 +167,7 @@ public class DeviceList extends Activity {
   private CommunicationService.Callback mDiscoveryCallback = new CommunicationService.Callback(){
 
     @Override
-    public void onDiscovery(Device peer) {
+    public void onPeerDiscovered(Device peer) {
       //TODO: check if peer has been added already
       mNewDevicesArrayAdapter.add(peer);
     }  	
@@ -185,6 +185,12 @@ public class DeviceList extends Activity {
       // commented for test
       //String noDevices = getResources().getText(R.string.none_found).toString();
       //mNewDevicesArrayAdapter.add(noDevices);
+    }
+    
+    @Override
+    public void onServiceDiscovered(Device peer) {
+      //TODO: now that we have more up to date information we should trim back the device list. 
+      // Since these peers are the ones we are actually concerned with
     }
   };
 

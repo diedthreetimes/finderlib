@@ -86,14 +86,32 @@ public interface CommunicationService {
 	//TODO: Provide a way for the device list to access this object (Think about making it static)
 	//TODO: Think about which method signature (or maybe both) makes sense
 	abstract class Callback {
-		public abstract void onDiscovery(Device peer);
-		public void onDiscovery(Collection<Device> peers){
+	  /**
+	   * Called when any peer of the medium is discovered. These peers are not guaranteed to belong to the same application.
+	   * For many subclasses, this method may return results quicker then {@link #onServiceDiscovered(Device)}
+	   */
+		public abstract void onPeerDiscovered(Device peer);
+		public void onPeerDiscovered(Collection<Device> peers){
 			for(Device device: peers)
-				onDiscovery(device);
+				onPeerDiscovered(device);
 		}
+		
+		/**
+		 * Called when peer is found running the same service. (Where a "service" is specific to the subclass)
+		 */
+		public abstract void onServiceDiscovered(Device peer);
+		public void onServiceDiscovered(Collection<Device> peers){
+		  for(Device device: peers)
+		    onPeerDiscovered(device);
+		}
+		
 		
 		public void onDiscoveryComplete(boolean success){
 			
+		}
+		
+		public void onDiscoveryStarted(){
+		  
 		}
 	}
     

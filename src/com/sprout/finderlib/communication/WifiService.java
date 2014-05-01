@@ -282,7 +282,7 @@ public class WifiService extends AbstractCommunicationService {
 	    				ans.add(new Device(device));
 	    			}
 	    			
-	    			WiFiDirectBroadcastReceiver.this.callback.onDiscovery(ans);
+	    			WiFiDirectBroadcastReceiver.this.callback.onPeerDiscovered(ans);
 	    		// TODO: FIll out with a device list parcel //handler.sendMessage();
 	    	}
 	    	

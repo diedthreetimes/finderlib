@@ -14,7 +14,9 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -35,6 +37,7 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Parcelable;
 import android.util.Log;
 
 /**
@@ -85,6 +88,7 @@ public class BluetoothService extends AbstractCommunicationService {
     	// Register for broadcasts when a device is discovered or finished
         mIntentFilter = new IntentFilter();
         mIntentFilter.addAction(BluetoothDevice.ACTION_FOUND);
+        mIntentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
         mIntentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         mIntentFilter.addAction(BluetoothDevice.ACTION_UUID);
     }
@@ -627,6 +631,8 @@ public class BluetoothService extends AbstractCommunicationService {
     // The BroadcastReceiver that listens for discovered devices and
     // changes the title when discovery is finished
 	private IntentFilter mIntentFilter;
+	private List<BluetoothDevice> discoveredDevices;
+	
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -637,21 +643,56 @@ public class BluetoothService extends AbstractCommunicationService {
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 // If it's already paired, skip it, because it's been listed already
                 if (device.getBondState() != BluetoothDevice.BOND_BONDED && callback != null) {
-                	callback.onDiscovery(new Device(device));
+                	callback.onPeerDiscovered(new Device(device));
                 }
+                
+                discoveredDevices.add(device);
+                
             // When discovery is finished, change the Activity title
-            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+            } else if(BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
+              if (discoveredDevices == null) {
+                discoveredDevices = new ArrayList<BluetoothDevice>();
+              }
+              
+              discoveredDevices.clear();
+              
+              if(callback != null)
+                callback.onDiscoveryStarted();
+            }
+            else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
               // We may need to wait until discovery is completed before we can query for the UUID
-//              Log.i("\nGetting Services for " + device.getName() + ", " + device);
-//              if(!device.fetchUuidsWithSdp()) {
-//                out.append("\nSDP Failed for " + device.getName());
-//              }
-            	callback.onDiscoveryComplete(true);
+              
+              if(callback != null)
+                callback.onDiscoveryComplete(true);
+            	
+            	for (BluetoothDevice device : discoveredDevices) {
+            	  Log.i(TAG, "Getting Services for " + device.getName() + ", " + device);
+            	  if(!device.fetchUuidsWithSdp()) {
+            	    Log.e(TAG,"SDP Failed for " + device.getName());
+            	  }
+            	}
             } else if(BluetoothDevice.ACTION_UUID.equals(action)) {
               BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
               Parcelable[] uuidExtra = intent.getParcelableArrayExtra(BluetoothDevice.EXTRA_UUID);
+             
+              if (uuidExtra == null) {     
+                uuidExtra = device.getUuids();
+                
+                if (uuidExtra == null) {
+                  Log.e(TAG, "UUID could not be retrieved for device: " + device.getName());
+                  return;
+                }
+              } 
+              
               for (int i=0; i<uuidExtra.length; i++) {
-                out.append("\n  Device: " + device.getName() + ", " + device + ", Service: " + uuidExtra[i].toString());
+                String uuid = uuidExtra[i].toString();
+                if ((mSecure && uuid.equals(BluetoothService.MY_UUID_SECURE.toString())) || (!mSecure && uuid.equals(BluetoothService.MY_UUID_INSECURE.toString()))) {
+                  Log.i(TAG, "Device: " + device.getName() + ", " + device + ", Service: " + uuid);
+                  
+                  if(callback != null)
+                    callback.onServiceDiscovered(new Device(device));
+                }
+                
               }
             }
         }

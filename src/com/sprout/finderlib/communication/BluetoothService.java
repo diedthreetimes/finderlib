@@ -267,7 +267,7 @@ public class BluetoothService extends AbstractCommunicationService {
     setState(STATE_STOPPED);
 
     // Make sure we're not doing discovery anymore
-    if (mAdapter != null) {
+    if (mAdapter != null && mAdapter.isDiscovering()) {
       mAdapter.cancelDiscovery();
     }
 

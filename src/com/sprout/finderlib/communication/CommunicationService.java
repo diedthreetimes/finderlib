@@ -46,6 +46,9 @@ public interface CommunicationService {
      */
     public void start();
     public void start(boolean secure);
+    public void connect(Device device);
+    public void connect(String address);
+    public void connect(Device device, boolean secure);
     public void connect(String address, boolean secure);
     public void stop();
     /**

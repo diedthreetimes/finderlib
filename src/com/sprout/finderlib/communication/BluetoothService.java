@@ -162,6 +162,14 @@ public class BluetoothService extends AbstractCommunicationService {
     
     
     
+    /**
+     * Connect using the already configured security method.
+     */
+    @Override
+    public void connect(String address) {
+      connect(address, mSecure);
+    }
+    
     public synchronized void connect(String address, boolean secure){
     	BluetoothDevice device = mAdapter.getRemoteDevice(address);
     	connect(device, secure);
@@ -608,7 +616,7 @@ public class BluetoothService extends AbstractCommunicationService {
 						}
                     }
                 } catch (IOException e) {
-                    Log.e(TAG, "disconnected", e);
+                    Log.i(TAG, "disconnected");
                     connectionLost();
                     break;
                 }

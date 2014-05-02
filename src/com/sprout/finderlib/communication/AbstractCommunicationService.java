@@ -141,5 +141,15 @@ public abstract class AbstractCommunicationService implements
 	  
 		return new String(read());
 	}
+	
+	public void connect(Device device) {
+	  connect(device.getAddress());
+	}
+	public void connect(Device device, boolean secure) {
+	  connect(device.getAddress(), secure);
+	}
+	public void connect(String address) {
+	  connect(address, false);
+	}
 
 }

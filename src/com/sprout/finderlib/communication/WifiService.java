@@ -172,6 +172,10 @@ public class WifiService extends AbstractCommunicationService {
       }
     });
   }
+  
+  public void stopDiscovery() {
+    // TODO: Does this have any meaning over WiFi?
+  }
 
   /**
    * Write to the ConnectedThread in an unsynchronized manner
@@ -234,6 +238,15 @@ public class WifiService extends AbstractCommunicationService {
     }
     // Perform the write unsynchronized
     r.setReadLoop(flag);
+  }
+  
+  public boolean getReadLoop() {
+    boolean ret = false; // The default
+    synchronized (this) {
+      if (mState == STATE_CONNECTED)
+        ret = mConnectedThread.mForwardRead;
+    }
+    return ret;
   }
 
   @Override
@@ -687,7 +700,7 @@ public class WifiService extends AbstractCommunicationService {
     private final Socket mmSocket;
     private final DataInputStream mmInStream;
     private final DataOutputStream mmOutStream;
-    private boolean mForwardRead = true;
+    private boolean mForwardRead = false;
     private BlockingQueue<byte []> mMessageBuffer;
 
     public ConnectedThread(Socket socket, String socketType) {

@@ -50,7 +50,7 @@ import android.util.Log;
 public class BluetoothService extends AbstractCommunicationService {	
   // Debugging
   private static final String TAG = "BluetoothService";
-  private static final boolean D = false;
+  private static final boolean D = true;
 
   // Name for the SDP record when creating server socket
   private static final String NAME_SECURE = "GenomicTestSecure";
@@ -136,7 +136,7 @@ public class BluetoothService extends AbstractCommunicationService {
     //TODO: Does this logic belong here
     if(mNumTries >= MAX_RETRY){
       signalFailed();
-      start();
+      start(mSecure);
       return;
     }
 
@@ -186,18 +186,18 @@ public class BluetoothService extends AbstractCommunicationService {
     if( mState == STATE_CONNECTING || mConnectedThread != null ){
       return;
     }
-
+    
     mNumTries++;
     mDevice = device;
     mSecure = secure;
-    // Commented out for test
-    //        // Cancel any thread attempting to make a connection
-    //        if (mState == STATE_CONNECTING) {
-    //            if (mConnectThread != null) {mConnectThread.cancel(); mConnectThread = null;}
-    //        }
-    //
-    //        // Cancel any thread currently running a connection
-    //        if (mConnectedThread != null) {mConnectedThread.cancel(); mConnectedThread = null;}
+    
+    // Cancel any thread attempting to make a connection
+    if (mState == STATE_CONNECTING) {
+      if (mConnectThread != null) {mConnectThread.cancel(); mConnectThread = null;}
+    }
+
+    // Cancel any thread currently running a connection
+    if (mConnectedThread != null) {mConnectedThread.cancel(); mConnectedThread = null;}
 
     // Start the thread to connect with the given device
     mConnectThread = new ConnectThread(device, secure);
@@ -222,6 +222,7 @@ public class BluetoothService extends AbstractCommunicationService {
 
     // Cancel the accept thread because we only want to connect to one device
     if (mSecureAcceptThread != null) {
+      if(D) Log.d(TAG, "Canceling the accept thread");
       mSecureAcceptThread.cancel();
       mSecureAcceptThread = null;
     }
@@ -240,12 +241,20 @@ public class BluetoothService extends AbstractCommunicationService {
     setState(STATE_CONNECTED);
   }
 
-  // TODO: Will the activating another activity cause these events to be missed?
+  private boolean active = false; // Boolean indicating the status of the broadcast receiver
+  
+  // TODO: Will the activating another activity cause these events to be missed? Probably.
   public synchronized void pause() {
-    mContext.unregisterReceiver(mReceiver);
+    if (active)
+      mContext.unregisterReceiver(mReceiver);
+    
+    active = false;
   }
   public synchronized void resume() {
-    mContext.registerReceiver(mReceiver, mIntentFilter);
+    if (!active)
+      mContext.registerReceiver(mReceiver, mIntentFilter);
+    
+    active = true;
   }
 
 
@@ -331,6 +340,8 @@ public class BluetoothService extends AbstractCommunicationService {
    * @see ConnectedThread#setReadLoop()
    */
   public void setReadLoop(boolean flag){
+    // TODO: We should be able to set this before we are connected
+    Log.i(TAG, "Setting the read loop to " + flag);
     ConnectedThread r;
     // Synchronize a copy of the ConnectedThread
     synchronized (this) {
@@ -339,6 +350,15 @@ public class BluetoothService extends AbstractCommunicationService {
     }
     // Perform the write unsynchronized
     r.setReadLoop(flag);
+  }
+  
+  public boolean getReadLoop() {
+    boolean ret = false; // The default
+    synchronized (this) {
+      if (mState == STATE_CONNECTED)
+        ret = mConnectedThread.mForwardRead;
+    }
+    return ret;
   }
 
   /**
@@ -507,7 +527,7 @@ public class BluetoothService extends AbstractCommunicationService {
     private final BluetoothSocket mmSocket;
     private final DataInputStream mmInStream;
     private final DataOutputStream mmOutStream;
-    private boolean mForwardRead = true;
+    private boolean mForwardRead = false; // This is a much more sane default for the kind of work we are doing
     private BlockingQueue<byte []> mMessageBuffer;
 
     public ConnectedThread(BluetoothSocket socket, String socketType) {
@@ -640,6 +660,7 @@ public class BluetoothService extends AbstractCommunicationService {
   // changes the title when discovery is finished
   private IntentFilter mIntentFilter;
   private List<BluetoothDevice> discoveredDevices;
+  private Set<String> returnedUUIDs;
 
   private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
     @Override
@@ -661,7 +682,12 @@ public class BluetoothService extends AbstractCommunicationService {
         if (discoveredDevices == null) {
           discoveredDevices = new ArrayList<BluetoothDevice>();
         }
+        
+        if (returnedUUIDs == null) {
+          returnedUUIDs = new HashSet<String>();
+        }
 
+        returnedUUIDs.clear();
         discoveredDevices.clear();
 
         if(callback != null)
@@ -691,14 +717,21 @@ public class BluetoothService extends AbstractCommunicationService {
             return;
           }
         } 
-
+        
         for (int i=0; i<uuidExtra.length; i++) {
           String uuid = uuidExtra[i].toString();
-          if ((mSecure && uuid.equals(BluetoothService.MY_UUID_SECURE.toString())) || (!mSecure && uuid.equals(BluetoothService.MY_UUID_INSECURE.toString()))) {
+          
+          // If we haven't already returned this UUID and it matches our UUID
+          if (!returnedUUIDs.contains(uuid) && 
+              ( (mSecure && uuid.equals(BluetoothService.MY_UUID_SECURE.toString())) ||
+                (!mSecure && uuid.equals(BluetoothService.MY_UUID_INSECURE.toString())) ) ) {
+            
             Log.i(TAG, "Device: " + device.getName() + ", " + device + ", Service: " + uuid);
 
             if(callback != null)
               callback.onServiceDiscovered(new Device(device));
+            
+            returnedUUIDs.add(uuid);
           }
 
         }
@@ -706,7 +739,6 @@ public class BluetoothService extends AbstractCommunicationService {
     }
   };
 
-  @Override
   public void discoverPeers(Callback callback) {
     this.callback = callback;
 
@@ -717,6 +749,12 @@ public class BluetoothService extends AbstractCommunicationService {
 
     // Request discover from BluetoothAdapter
     mAdapter.startDiscovery();
+  }
+  
+  public void stopDiscovery() {
+    this.callback = null;
+    
+    mAdapter.cancelDiscovery();
   }
 
   public Set<Device> bondedPeers() {

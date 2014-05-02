@@ -75,9 +75,12 @@ public interface CommunicationService {
    * @see ConnectedThread#setReadLoop()
    */
   public void setReadLoop(boolean flag);
+  public boolean getReadLoop();
 
   public Set<Device> bondedPeers();
   public void discoverPeers(Callback callback);
+  
+  public void stopDiscovery();
 
 
   public Device getSelf();

@@ -26,7 +26,7 @@ import android.util.Log;
 public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTask<Params, Progress, Result> {
 	// Debugging
     private final String TAG = "PrivateProtocol";
-    private final boolean D = false;
+    private final boolean D = true;
     
     // Message Paramaters
     public static final String SEPERATOR = ";;";
@@ -46,7 +46,6 @@ public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTa
     protected boolean client;
     protected String testName;
     protected CommunicationService msgService;
-    
 
     public PrivateProtocol(String testName, CommunicationService s, boolean client) {
     	loadSharedKeys();
@@ -72,6 +71,7 @@ public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTa
     public Result conductTest(String testName, CommunicationService s, boolean client, Params... inputSet) {
     	Result ret = null;
     	
+    	boolean oldRead = s.getReadLoop();
     	//Switch to synchronous message reading. 
     	s.setReadLoop(false); // this may take a message to take affect
     	
@@ -123,7 +123,7 @@ public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTa
     	}
     	finally {
     		
-    		s.setReadLoop(true); //TODO: make this revert to its previous state
+    		s.setReadLoop(oldRead);
     	}
     	
     	
@@ -172,8 +172,8 @@ public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTa
     	while(true){
     		String read = s.readString();
     		if(read == null){
-    			if(D) Log.d(TAG, "Client: Read failed");
-    			//TODO: Should we raise? yes
+    			if(D) Log.d(TAG, "Client: Read failed, are we connected?");
+    			throw new ConnectionException("Unable to read from CommunicationService. May not longer be connected");
     		}
     		else if(read.equals(ACK_START_MESSAGE)) { //TODO: Should we look for which test was started as well?
     			s.write(ACK_START_MESSAGE);

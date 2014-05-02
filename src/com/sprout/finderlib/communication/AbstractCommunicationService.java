@@ -19,7 +19,7 @@ CommunicationService {
   protected Context mContext;
 
   private static final String TAG = "AbstractCommunicationService";
-  private static final boolean D = true;
+  private static final boolean D = false;
 
 
   /**
@@ -136,10 +136,14 @@ CommunicationService {
    */
   public String readString() {
     byte[] buf = read();
-    if( buf == null || buf.length == 0 )
+    if( buf == null || buf.length == 0 ) { 
+      if (D) Log.d(TAG, "Read returned null");
       return null;
+    }
+    
+    if (D) Log.d(TAG, "Read returned " + new String(buf));
 
-    return new String(read());
+    return new String(buf);
   }
 
   public void connect(Device device) {

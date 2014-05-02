@@ -50,7 +50,7 @@ import android.util.Log;
 public class BluetoothService extends AbstractCommunicationService {	
   // Debugging
   private static final String TAG = "BluetoothService";
-  private static final boolean D = true;
+  private static final boolean D = false;
 
   // Name for the SDP record when creating server socket
   private static final String NAME_SECURE = "GenomicTestSecure";
@@ -311,7 +311,7 @@ public class BluetoothService extends AbstractCommunicationService {
 
 
   /**
-   * Read from the ConnectedThread in an unsynchronized manner
+   * Read from the ConnectedThread in an synchronized manner
    * Note, this is a blocking call
    * @return the bytes read
    * @see ConnectedThread#read()
@@ -659,8 +659,8 @@ public class BluetoothService extends AbstractCommunicationService {
   // The BroadcastReceiver that listens for discovered devices and
   // changes the title when discovery is finished
   private IntentFilter mIntentFilter;
-  private List<BluetoothDevice> discoveredDevices;
-  private Set<String> returnedUUIDs;
+  private List<BluetoothDevice> discoveredDevices = new ArrayList<BluetoothDevice>();
+  private Set<String> returnedUUIDs = new HashSet<String>();;
 
   private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
     @Override
@@ -679,14 +679,6 @@ public class BluetoothService extends AbstractCommunicationService {
 
         // When discovery is finished, change the Activity title
       } else if(BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
-        if (discoveredDevices == null) {
-          discoveredDevices = new ArrayList<BluetoothDevice>();
-        }
-        
-        if (returnedUUIDs == null) {
-          returnedUUIDs = new HashSet<String>();
-        }
-
         returnedUUIDs.clear();
         discoveredDevices.clear();
 

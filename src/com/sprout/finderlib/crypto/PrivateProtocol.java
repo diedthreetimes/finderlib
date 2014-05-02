@@ -173,7 +173,7 @@ public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTa
     		String read = s.readString();
     		if(read == null){
     			if(D) Log.d(TAG, "Client: Read failed, are we connected?");
-    			throw new ConnectionException("Unable to read from CommunicationService. May not longer be connected");
+    			throw new ConnectionException("Unable to read from CommunicationService. May no longer be connected");
     		}
     		else if(read.equals(ACK_START_MESSAGE)) { //TODO: Should we look for which test was started as well?
     			s.write(ACK_START_MESSAGE);

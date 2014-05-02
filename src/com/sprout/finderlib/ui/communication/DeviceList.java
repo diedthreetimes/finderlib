@@ -186,7 +186,7 @@ public class DeviceList extends Activity {
       //String noDevices = getResources().getText(R.string.none_found).toString();
       //mNewDevicesArrayAdapter.add(noDevices);
     }
-    
+
     @Override
     public void onServiceDiscovered(Device peer) {
       //TODO: now that we have more up to date information we should trim back the device list. 

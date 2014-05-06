@@ -47,6 +47,9 @@ import android.util.Log;
  * thread for performing data transmissions when connected. It does not
  * howerver, handle discovery.
  */
+
+// TODO: General TODOs. Thouroughly test/rewrite this class to support bluetooth adapter turning itself on/off
+
 public class BluetoothService extends AbstractCommunicationService {	
   // Debugging
   private static final String TAG = "BluetoothService";
@@ -91,6 +94,7 @@ public class BluetoothService extends AbstractCommunicationService {
     mIntentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
     mIntentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
     mIntentFilter.addAction(BluetoothDevice.ACTION_UUID);
+    mIntentFilter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
   }
 
 
@@ -727,8 +731,33 @@ public class BluetoothService extends AbstractCommunicationService {
           }
 
         }
-      }
-    }
+      } else if(BluetoothAdapter.ACTION_STATE_CHANGED.equals(intent.getAction())) {
+        // TODO: We may need to listen for these changes, even when we are "stopped"
+        //   To do that we probably need to use a different intent filter while stopped
+        switch (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1)) {
+        case BluetoothAdapter.STATE_OFF:
+          if (mState != BluetoothService.STATE_STOPPED) {
+            // TODO: start the connection
+          }
+          
+          mHandler.sendMessage(mHandler.obtainMessage(MESSAGE_DISABLED));
+          break;
+        case BluetoothAdapter.STATE_ON:
+          if ( mState != BluetoothService.STATE_STOPPED) {
+            // TODO: resume the connection
+          }
+
+          mHandler.sendMessage(mHandler.obtainMessage(MESSAGE_ENABLED));
+          break;
+        case -1:
+          Log.e(TAG, "No state provided");
+          break;
+        default:
+          // Just ignore the action
+          break;
+    } 
+  }
+    } 
   };
 
   public void discoverPeers(Callback callback) {

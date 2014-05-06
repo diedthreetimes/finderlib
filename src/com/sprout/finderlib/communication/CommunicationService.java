@@ -30,6 +30,8 @@ public interface CommunicationService {
   public static final int MESSAGE_DEVICE_NAME = 4;
   public static final int MESSAGE_TOAST = 5;
   public static final int MESSAGE_FAILED = 6;
+  public static final int MESSAGE_DISABLED = 7;
+  public static final int MESSAGE_ENABLED = 8;
 
   public static final String EXTRA_SERVICE_TRANFER = "com.sprout.finderlib.communicationservice.service_transfer";
   public static final Map<String, WeakReference<CommunicationService>> com_transfers = new HashMap<String, WeakReference<CommunicationService>>();

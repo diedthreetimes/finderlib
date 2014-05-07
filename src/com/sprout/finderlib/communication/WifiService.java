@@ -258,12 +258,16 @@ public class WifiService extends AbstractCommunicationService {
     return new HashSet<Device>();
   }
 
-  @Override
   public Device getSelf() {
     if(device != null)
       return new Device(device);
     else
       return new Device("info miss...","info miss..."); // TODO: Test this 
+  }
+  
+  public boolean isEnabled() {
+    Log.w(TAG, "WiFiService isEnabled not implemented");
+    return true;
   }
 
   /**
@@ -419,7 +423,7 @@ public class WifiService extends AbstractCommunicationService {
     return;
     // TODO: How do we rety a WiFi connection
     /* if(mNumTries >= MAX_RETRY){
-
+getState(
     		signalFailed();
     		start();
     		return;

@@ -100,7 +100,7 @@ public class BluetoothService extends AbstractCommunicationService {
 
   /**
    * Start the communication service. Specifically start AcceptThread to begin a
-   * session in listening (server) mode. Called by the Activity onResume() */
+   * session in listening (server) mget(ode. Called by the Activity onResume() */
   @Override
   public synchronized void start(boolean secure) {
     if (D) Log.d(TAG, "start");
@@ -788,5 +788,9 @@ public class BluetoothService extends AbstractCommunicationService {
 
   public Device getSelf() {
     return new Device(mAdapter.getName(), mAdapter.getAddress());
+  }
+  
+  public boolean isEnabled() {
+    return mAdapter.isEnabled();
   }
 }

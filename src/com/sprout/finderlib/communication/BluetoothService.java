@@ -13,7 +13,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -21,10 +20,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import org.spongycastle.asn1.nist.NISTNamedCurves;
-import org.spongycastle.math.ec.ECPoint;
-
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -54,6 +49,7 @@ public class BluetoothService extends AbstractCommunicationService {
   // Debugging
   private static final String TAG = "BluetoothService";
   private static final boolean D = true;
+  private static final boolean V = false;
 
   // Name for the SDP record when creating server socket
   private static final String NAME_SECURE = "GenomicTestSecure";
@@ -332,7 +328,7 @@ public class BluetoothService extends AbstractCommunicationService {
     // Perform the read unsynchronized and parse
     byte[] readMessage = r.read();
 
-    if(D) Log.d(TAG, "Read: " + new String(readMessage));
+    if(V) Log.d(TAG, "Read: " + new String(readMessage));
     return readMessage;
   }
 
@@ -717,7 +713,7 @@ public class BluetoothService extends AbstractCommunicationService {
           if (uuidExtra == null) {
             Log.e(TAG, "UUID could not be retrieved for device: " + device.getName());
             
-            if (D) Log.i(TAG, "Device " + device + " removed, with no uuids");
+            if (V) Log.i(TAG, "Device " + device + " removed, with no uuids");
             discoveredDevices.remove(device);
 
             // Is it ever possible that not every queued device will be discovered?
@@ -733,14 +729,14 @@ public class BluetoothService extends AbstractCommunicationService {
         for (int i=0; i<uuidExtra.length; i++) {
           String uuid = uuidExtra[i].toString();
           
-          if(D) Log.d(TAG, "Device : " + device.toString() + " Serivce: " + uuid);
+          if(V) Log.d(TAG, "Device : " + device.toString() + " Serivce: " + uuid);
           
           // If we haven't already returned this UUID and it matches our UUID
           if (!returnedUUIDs.contains(device.toString()+uuid) && 
               ( (mSecure && uuid.equals(BluetoothService.MY_UUID_SECURE.toString())) ||
                 (!mSecure && uuid.equals(BluetoothService.MY_UUID_INSECURE.toString())) ) ) {
             
-            if(D) Log.i(TAG, "Device: " + device.getName() + ", " + device + ", Service: " + uuid);
+            if(V) Log.i(TAG, "Device: " + device.getName() + ", " + device + ", Service: " + uuid);
 
             if(callback != null)
               callback.onServiceDiscovered(new Device(device));

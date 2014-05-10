@@ -692,8 +692,10 @@ public class BluetoothService extends AbstractCommunicationService {
       else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
         // We may need to wait until discovery is completed before we can query for the UUID
 
-        if(callback != null)
-          callback.onDiscoveryComplete(true);
+        // TODO: We may want some callback here eventually
+        //   For now we use only the callback once all devices have been added
+        //if(callback != null)
+        //  callback.onDiscoveryComplete(true);
 
         for (BluetoothDevice device : discoveredDevices) {
           Log.i(TAG, "Getting Services for " + device.getName() + ", " + device);
@@ -710,6 +712,15 @@ public class BluetoothService extends AbstractCommunicationService {
 
           if (uuidExtra == null) {
             Log.e(TAG, "UUID could not be retrieved for device: " + device.getName());
+            
+            discoveredDevices.remove(device);
+
+            // Is it ever possible that not every queued device will be discovered?
+            if (discoveredDevices.size() == 0) {
+              if(callback != null)
+                callback.onDiscoveryComplete(true);
+            }
+            
             return;
           }
         } 
@@ -729,7 +740,14 @@ public class BluetoothService extends AbstractCommunicationService {
             
             returnedUUIDs.add(uuid);
           }
+        }
+        
+        discoveredDevices.remove(device);
 
+        // Is it ever possible that not every queued device will be discovered?
+        if (discoveredDevices.size() == 0) {
+          if(callback != null)
+            callback.onDiscoveryComplete(true);
         }
       } else if(BluetoothAdapter.ACTION_STATE_CHANGED.equals(intent.getAction())) {
         // TODO: We may need to listen for these changes, even when we are "stopped"

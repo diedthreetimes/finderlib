@@ -53,7 +53,7 @@ import android.util.Log;
 public class BluetoothService extends AbstractCommunicationService {	
   // Debugging
   private static final String TAG = "BluetoothService";
-  private static final boolean D = false;
+  private static final boolean D = true;
 
   // Name for the SDP record when creating server socket
   private static final String NAME_SECURE = "GenomicTestSecure";
@@ -374,10 +374,12 @@ public class BluetoothService extends AbstractCommunicationService {
     // The local server socket
     private final BluetoothServerSocket mmServerSocket;
     private String mSocketType;
+    private boolean logError; // Toggled on cancel to supress logging
 
     public AcceptThread(boolean secure) {
       BluetoothServerSocket tmp = null;
       mSocketType = secure ? "Secure":"Insecure";
+      logError = true;
 
       // Create a new listening server socket
       try {
@@ -407,7 +409,8 @@ public class BluetoothService extends AbstractCommunicationService {
           // successful connection or an exception
           socket = mmServerSocket.accept();
         } catch (IOException e) {
-          Log.e(TAG, "Socket Type: " + mSocketType + " accept() failed", e);
+          if (logError)
+            Log.e(TAG, "Socket Type: " + mSocketType + " accept() failed", e);
           break;
         }
 
@@ -442,6 +445,7 @@ public class BluetoothService extends AbstractCommunicationService {
 
     public void cancel() {
       if (D) Log.d(TAG, "Socket Type" + mSocketType + "cancel " + this);
+      logError=false;
       try {
         mmServerSocket.close();
       } catch (IOException e) {
@@ -713,6 +717,7 @@ public class BluetoothService extends AbstractCommunicationService {
           if (uuidExtra == null) {
             Log.e(TAG, "UUID could not be retrieved for device: " + device.getName());
             
+            if (D) Log.i(TAG, "Device " + device + " removed, with no uuids");
             discoveredDevices.remove(device);
 
             // Is it ever possible that not every queued device will be discovered?
@@ -728,20 +733,23 @@ public class BluetoothService extends AbstractCommunicationService {
         for (int i=0; i<uuidExtra.length; i++) {
           String uuid = uuidExtra[i].toString();
           
+          if(D) Log.d(TAG, "Device : " + device.toString() + " Serivce: " + uuid);
+          
           // If we haven't already returned this UUID and it matches our UUID
-          if (!returnedUUIDs.contains(uuid) && 
+          if (!returnedUUIDs.contains(device.toString()+uuid) && 
               ( (mSecure && uuid.equals(BluetoothService.MY_UUID_SECURE.toString())) ||
                 (!mSecure && uuid.equals(BluetoothService.MY_UUID_INSECURE.toString())) ) ) {
             
-            Log.i(TAG, "Device: " + device.getName() + ", " + device + ", Service: " + uuid);
+            if(D) Log.i(TAG, "Device: " + device.getName() + ", " + device + ", Service: " + uuid);
 
             if(callback != null)
               callback.onServiceDiscovered(new Device(device));
             
-            returnedUUIDs.add(uuid);
+            returnedUUIDs.add(device.toString()+uuid);
           }
         }
         
+        if(D) Log.d(TAG, "Device: " + device + " uuidExtra length " + uuidExtra.length +" removed");
         discoveredDevices.remove(device);
 
         // Is it ever possible that not every queued device will be discovered?

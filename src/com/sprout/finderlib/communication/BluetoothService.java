@@ -40,10 +40,10 @@ import android.util.Log;
  * connections with other devices. It has a thread that listens for
  * incoming connections, a thread for connecting with a device, and a
  * thread for performing data transmissions when connected. It does not
- * howerver, handle discovery.
+ * However, handle discovery.
  */
 
-// TODO: General TODOs. Thouroughly test/rewrite this class to support bluetooth adapter turning itself on/off
+// TODO: General TODOs. Thoroughly test/rewrite this class to support bluetooth adapter turning itself on/off
 
 public class BluetoothService extends AbstractCommunicationService {	
   // Debugging
@@ -72,7 +72,7 @@ public class BluetoothService extends AbstractCommunicationService {
 
   private int mNumTries;
   private BluetoothDevice mDevice;
-  private boolean mSecure;
+  private boolean mSecure = false;
 
 
   /**
@@ -93,10 +93,15 @@ public class BluetoothService extends AbstractCommunicationService {
     mIntentFilter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
   }
 
+  
+  @Override
+  public void start() {
+    start(mSecure);
+  }
 
   /**
    * Start the communication service. Specifically start AcceptThread to begin a
-   * session in listening (server) mget(ode. Called by the Activity onResume() */
+   * session in listening (server) mode. Called by the Activity onResume() */
   @Override
   public synchronized void start(boolean secure) {
     if (D) Log.d(TAG, "start");
@@ -157,17 +162,6 @@ public class BluetoothService extends AbstractCommunicationService {
     // TODO: make this less strict
     if( mState != STATE_CONNECTING && mState != STATE_CONNECTED && mConnectedThread == null && mConnectThread == null)
       connect(mDevice, mSecure);
-  }
-
-
-
-
-  /**
-   * Connect using the already configured security method.
-   */
-  @Override
-  public void connect(String address) {
-    connect(address, mSecure);
   }
 
   public synchronized void connect(String address, boolean secure){
@@ -232,9 +226,9 @@ public class BluetoothService extends AbstractCommunicationService {
     mConnectedThread.start();
 
     // Send the name of the connected device back to the UI Activity
-    Message msg = mHandler.obtainMessage(MESSAGE_DEVICE_NAME);
+    Message msg = mHandler.obtainMessage(MESSAGE_DEVICE);
     Bundle bundle = new Bundle();
-    bundle.putString(DEVICE_NAME, device.getName());
+    bundle.putSerializable(DEVICE, new Device(device));
     msg.setData(bundle);
     mHandler.sendMessage(msg);
 
@@ -745,7 +739,7 @@ public class BluetoothService extends AbstractCommunicationService {
           }
         }
         
-        if(D) Log.d(TAG, "Device: " + device + " uuidExtra length " + uuidExtra.length +" removed");
+        if(V) Log.d(TAG, "Device: " + device + " uuidExtra length " + uuidExtra.length +" removed");
         discoveredDevices.remove(device);
 
         // Is it ever possible that not every queued device will be discovered?

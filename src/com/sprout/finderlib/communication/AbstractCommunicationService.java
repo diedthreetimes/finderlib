@@ -96,7 +96,7 @@ CommunicationService {
   }
 
   public synchronized void start() {
-    start(true);
+    start(false);
   }
 
   protected abstract void retry();

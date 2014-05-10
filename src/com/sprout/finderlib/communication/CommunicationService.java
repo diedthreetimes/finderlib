@@ -9,9 +9,7 @@ import java.util.Set;
 
 import org.spongycastle.math.ec.ECPoint;
 
-
 import android.os.Handler;
-import android.text.format.Time;
 
 
 public interface CommunicationService {
@@ -27,7 +25,7 @@ public interface CommunicationService {
   public static final int MESSAGE_STATE_CHANGE = 1;
   public static final int MESSAGE_READ = 2;
   public static final int MESSAGE_WRITE = 3;
-  public static final int MESSAGE_DEVICE_NAME = 4;
+  public static final int MESSAGE_DEVICE = 4;
   public static final int MESSAGE_TOAST = 5;
   public static final int MESSAGE_FAILED = 6;
   public static final int MESSAGE_DISABLED = 7;
@@ -37,7 +35,7 @@ public interface CommunicationService {
   public static final Map<String, WeakReference<CommunicationService>> com_transfers = new HashMap<String, WeakReference<CommunicationService>>();
 
   // Key names sent to mHandler
-  public static final String DEVICE_NAME = "device_name";
+  public static final String DEVICE = "device_serialized";
   public static final String TOAST = "toast";
 
   public void setHandler(Handler handler);

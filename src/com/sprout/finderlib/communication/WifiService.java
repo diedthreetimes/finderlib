@@ -506,9 +506,9 @@ getState(
     mConnectedThread.start();
 
     // Send the name of the connected device back to the UI Activity
-    Message msg = mHandler.obtainMessage(MESSAGE_DEVICE_NAME);
+    Message msg = mHandler.obtainMessage(MESSAGE_DEVICE);
     Bundle bundle = new Bundle();
-    bundle.putString(DEVICE_NAME, socket.getInetAddress().toString());
+    bundle.putSerializable(DEVICE, new Device("Unkown name", socket.getInetAddress().toString()));
     msg.setData(bundle);
     mHandler.sendMessage(msg);
 

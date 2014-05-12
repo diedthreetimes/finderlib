@@ -1,29 +1,25 @@
 package com.sprout.finderlib.ui.communication;
 
-import android.app.Activity;
-import android.os.Bundle;
-
 import java.lang.ref.WeakReference;
 import java.util.Set;
 
-import com.sprout.finderlib.R;
-import com.sprout.finderlib.R.id;
-import com.sprout.finderlib.R.layout;
-import com.sprout.finderlib.R.string;
-import com.sprout.finderlib.communication.CommunicationService;
-import com.sprout.finderlib.communication.Device;
-
+import android.app.Activity;
 import android.content.Intent;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.Window;
 import android.view.View.OnClickListener;
+import android.view.Window;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.AdapterView.OnItemClickListener;
+
+import com.sprout.finderlib.R;
+import com.sprout.finderlib.communication.CommunicationService;
+import com.sprout.finderlib.communication.Device;
 
 //TODO: FIX the UI for this activity
 

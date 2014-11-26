@@ -7,5 +7,6 @@
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
 	<classpathentry kind="lib" path="lib/sccore-1.50.0.0.jar"/>
 	<classpathentry kind="lib" path="lib/scprov-1.50.0.0.jar"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/socialauth"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

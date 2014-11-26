@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.sprout.finderlib.communication.BluetoothService;
 import com.sprout.finderlib.communication.CommunicationService;
 
 import android.util.Log;

@@ -1,7 +1,6 @@
 package com.sprout.finderlib.crypto;
 
 import java.math.BigInteger;
-import java.util.List;
 
 import org.spongycastle.asn1.nist.NISTNamedCurves;
 import org.spongycastle.asn1.x9.X9ECParameters;

@@ -807,6 +807,9 @@ public class BluetoothService extends AbstractCommunicationService {
   }
   
   public boolean isEnabled() {
+    if (mAdapter == null) {
+      return false;
+    }
     return mAdapter.isEnabled();
   }
 }

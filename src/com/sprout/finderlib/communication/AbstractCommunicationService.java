@@ -155,5 +155,10 @@ CommunicationService {
   public void connect(String address) {
     connect(address, false);
   }
+  
+  
+  public void clearAllCache() {
+    // Override to allow users to reset any com specific data (i.e. device caches)
+  }
 
 }

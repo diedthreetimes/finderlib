@@ -56,9 +56,9 @@ public class BluetoothService extends AbstractCommunicationService {
   private static final String NAME_INSECURE = "GenomicTestInsecure";
 
   // Unique UUID for this application
-  private static final UUID MY_UUID_SECURE =
+  static final UUID MY_UUID_SECURE =
       UUID.fromString("6bc03610-4155-11e1-b86c-0800200c9a66");
-  private static final UUID MY_UUID_INSECURE = // Secure threads are not allowed but left for debugging
+  static final UUID MY_UUID_INSECURE = // Secure threads are not allowed but left for debugging
       UUID.fromString("cf32cad0-cfcb-11e3-9c1a-0800200c9a66");
 
   // Maximum reconnect attempts
@@ -72,7 +72,7 @@ public class BluetoothService extends AbstractCommunicationService {
 
   private int mNumTries;
   private BluetoothDevice mDevice;
-  private boolean mSecure = false;
+  boolean mSecure = false;
 
 
   /**
@@ -83,14 +83,6 @@ public class BluetoothService extends AbstractCommunicationService {
   public BluetoothService(Context context, Handler handler) {
     super(context, handler);
     mAdapter = BluetoothAdapter.getDefaultAdapter();
-
-    // Register for broadcasts when a device is discovered or finished
-    mIntentFilter = new IntentFilter();
-    mIntentFilter.addAction(BluetoothDevice.ACTION_FOUND);
-    mIntentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
-    mIntentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-    mIntentFilter.addAction(BluetoothDevice.ACTION_UUID);
-    mIntentFilter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
   }
 
   
@@ -246,11 +238,10 @@ public class BluetoothService extends AbstractCommunicationService {
   }
   public synchronized void resume() {
     if (!active)
-      mContext.registerReceiver(mReceiver, mIntentFilter);
+      mContext.registerReceiver(mReceiver, mReceiver.mIntentFilter);
     
     active = true;
   }
-
 
   /**
    * Stop all threads
@@ -650,134 +641,10 @@ public class BluetoothService extends AbstractCommunicationService {
     }
   }
 
-
-  //TODO: Move this discovery code to the top of the class
-  Callback callback;
-
-  // The BroadcastReceiver that listens for discovered devices and
-  // changes the title when discovery is finished
-  private IntentFilter mIntentFilter;
-  private List<BluetoothDevice> discoveredDevices = new ArrayList<BluetoothDevice>();
-  private Set<String> returnedUUIDs = new HashSet<String>();;
-
-  private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-      String action = intent.getAction();
-      // When discovery finds a device
-      if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-        // Get the BluetoothDevice object from the Intent
-        BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-        // If it's already paired, skip it, because it's been listed already
-        if (device.getBondState() != BluetoothDevice.BOND_BONDED && callback != null) {
-          callback.onPeerDiscovered(new Device(device));
-        }
-
-        discoveredDevices.add(device);
-
-        // When discovery is finished, change the Activity title
-      } else if(BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
-        returnedUUIDs.clear();
-        discoveredDevices.clear();
-
-        if(callback != null)
-          callback.onDiscoveryStarted();
-      }
-      else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-        // We may need to wait until discovery is completed before we can query for the UUID
-
-        // TODO: We may want some callback here eventually
-        //   For now we use only the callback once all devices have been added
-        //if(callback != null)
-        //  callback.onDiscoveryComplete(true);
-
-        for (BluetoothDevice device : discoveredDevices) {
-          Log.i(TAG, "Getting Services for " + device.getName() + ", " + device);
-          if(!device.fetchUuidsWithSdp()) {
-            Log.e(TAG,"SDP Failed for " + device.getName());
-          }
-        }
-      } else if(BluetoothDevice.ACTION_UUID.equals(action)) {
-        BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-        Parcelable[] uuidExtra = intent.getParcelableArrayExtra(BluetoothDevice.EXTRA_UUID);
-
-        if (uuidExtra == null) {     
-          uuidExtra = device.getUuids();
-
-          if (uuidExtra == null) {
-            Log.e(TAG, "UUID could not be retrieved for device: " + device.getName());
-            
-            if (V) Log.i(TAG, "Device " + device + " removed, with no uuids");
-            discoveredDevices.remove(device);
-
-            // Is it ever possible that not every queued device will be discovered?
-            if (discoveredDevices.size() == 0) {
-              if(callback != null)
-                callback.onDiscoveryComplete(true);
-            }
-            
-            return;
-          }
-        } 
-        
-        for (int i=0; i<uuidExtra.length; i++) {
-          String uuid = uuidExtra[i].toString();
-          
-          if(V) Log.d(TAG, "Device : " + device.toString() + " Serivce: " + uuid);
-          
-          // If we haven't already returned this UUID and it matches our UUID
-          if (!returnedUUIDs.contains(device.toString()+uuid) && 
-              ( (mSecure && uuid.equals(BluetoothService.MY_UUID_SECURE.toString())) ||
-                (!mSecure && uuid.equals(BluetoothService.MY_UUID_INSECURE.toString())) ) ) {
-            
-            if(V) Log.i(TAG, "Device: " + device.getName() + ", " + device + ", Service: " + uuid);
-
-            if(callback != null)
-              callback.onServiceDiscovered(new Device(device));
-            
-            returnedUUIDs.add(device.toString()+uuid);
-          }
-        }
-        
-        if(V) Log.d(TAG, "Device: " + device + " uuidExtra length " + uuidExtra.length +" removed");
-        discoveredDevices.remove(device);
-
-        // Is it ever possible that not every queued device will be discovered?
-        if (discoveredDevices.size() == 0) {
-          if(callback != null)
-            callback.onDiscoveryComplete(true);
-        }
-      } else if(BluetoothAdapter.ACTION_STATE_CHANGED.equals(intent.getAction())) {
-        // TODO: We may need to listen for these changes, even when we are "stopped"
-        //   To do that we probably need to use a different intent filter while stopped
-        switch (intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1)) {
-        case BluetoothAdapter.STATE_OFF:
-          if (mState != BluetoothService.STATE_STOPPED) {
-            // TODO: start the connection
-          }
-          
-          mHandler.sendMessage(mHandler.obtainMessage(MESSAGE_DISABLED));
-          break;
-        case BluetoothAdapter.STATE_ON:
-          if ( mState != BluetoothService.STATE_STOPPED) {
-            // TODO: resume the connection
-          }
-
-          mHandler.sendMessage(mHandler.obtainMessage(MESSAGE_ENABLED));
-          break;
-        case -1:
-          Log.e(TAG, "No state provided");
-          break;
-        default:
-          // Just ignore the action
-          break;
-    } 
-  }
-    } 
-  };
+  private final BluetoothDiscoveryManager mReceiver = new BluetoothDiscoveryManager(this);
 
   public void discoverPeers(Callback callback) {
-    this.callback = callback;
+    mReceiver.callback = callback;
 
     // If we're already discovering, stop it
     if (mAdapter.isDiscovering()) {
@@ -789,7 +656,7 @@ public class BluetoothService extends AbstractCommunicationService {
   }
   
   public void stopDiscovery() {
-    this.callback = null;
+    mReceiver.callback = null;
     
     mAdapter.cancelDiscovery();
   }
@@ -811,5 +678,10 @@ public class BluetoothService extends AbstractCommunicationService {
       return false;
     }
     return mAdapter.isEnabled();
+  }
+  
+  
+  public void clearAllCache() {
+    mReceiver.clearCache();
   }
 }

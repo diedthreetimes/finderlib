@@ -82,6 +82,8 @@ public interface CommunicationService {
   public void discoverPeers(Callback callback);
   
   public void stopDiscovery();
+  
+  public void clearAllCache();
 
 
   public Device getSelf();

@@ -59,12 +59,13 @@ public class BluetoothDiscoveryManager extends BroadcastReceiver {
     handler.postDelayed(new Runnable() {
       @Override
       public void run() {
-        callback.onDiscoveryComplete(true);
         if (V) {
           Log.w(TAG,
               "Timeout expired with " +
                   discoveredDevices.size() + " still without UUID");
         }
+        
+        callback.onDiscoveryComplete(true);
       }
     }, delayMillis);
   }
@@ -147,11 +148,9 @@ public class BluetoothDiscoveryManager extends BroadcastReceiver {
         if (uuidExtra == null) {
           Log.e(TAG, "UUID could not be retrieved for device: " + device);
 
-          // Is it possible that this could happen if an error occurs when fetching?
-          // If so then we don't want to cache this result
-          // uuidCache.add(device, false);
-          // This seems to be causing problems.
-          
+          // It is possible this result happens in error. So mark it as a fuzzy result.
+          uuidCache.add(device, false, true);
+                   
           markDevice(device);
           return;
         }
@@ -164,16 +163,17 @@ public class BluetoothDiscoveryManager extends BroadcastReceiver {
         if(V) Log.d(TAG, "Device : " + device.toString() + " Serivce: " + uuid);
 
         // If we haven't already returned this UUID and it matches our UUID
-        if (!returnedUUIDs.contains(device.toString()+uuid) && 
-            ( (service.mSecure && uuid.equals(BluetoothService.MY_UUID_SECURE.toString())) ||
+        if (( (service.mSecure && uuid.equals(BluetoothService.MY_UUID_SECURE.toString())) ||
                 (!service.mSecure && uuid.equals(BluetoothService.MY_UUID_INSECURE.toString())) ) ) {
 
-          if(V) Log.i(TAG, "Device: " + device.getName() + ", " + device + ", Service: " + uuid);
-
-          if(callback != null)
-            callback.onServiceDiscovered(new Device(device));
-
-          returnedUUIDs.add(device.toString()+uuid);
+          if (!returnedUUIDs.contains(device.toString()+uuid)) {
+            if(V) Log.i(TAG, "Device: " + device.getName() + ", " + device + ", Service: " + uuid);
+  
+            if(callback != null)
+              callback.onServiceDiscovered(new Device(device));
+  
+            returnedUUIDs.add(device.toString()+uuid);
+          }
           
           present = true;
         }

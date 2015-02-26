@@ -65,7 +65,8 @@ public class BluetoothDiscoveryManager extends BroadcastReceiver {
                   discoveredDevices.size() + " still without UUID");
         }
         
-        callback.onDiscoveryComplete(true);
+        if (callback != null)
+          callback.onDiscoveryComplete(true);
       }
     }, delayMillis);
   }

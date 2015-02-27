@@ -64,10 +64,12 @@ public interface CommunicationService {
   public void write(String buffer);
   public void write(BigInteger out);
   public void write(ECPoint out);
+  public void write(int out);
   public byte [] read();
   public BigInteger readBigInteger();
   public ECPoint readECPoint();
   public String readString();
+  public int readInt();
 
   /**
    * Sets the readLoop flag to signify the behavior of socket reads

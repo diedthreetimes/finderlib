@@ -2,9 +2,11 @@ package com.sprout.finderlib.utils;
 
 public abstract class AsyncTask<Params, Progress, Result> {
 
-  protected Result doInBackground(Params... params) {
-    // TODO Auto-generated method stub
-    return null;
+  protected abstract Result doInBackground(Params... params);
+  
+  // TODO: Make this work like androids aysnctask but just with threads
+  public Result execute(Params... params) {
+    return doInBackground(params);
   }
 
 }

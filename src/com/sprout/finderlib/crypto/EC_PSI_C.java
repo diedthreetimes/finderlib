@@ -10,7 +10,7 @@ import org.spongycastle.math.ec.ECPoint;
 
 import com.sprout.finderlib.communication.CommunicationService;
 
-import android.util.Log;
+import com.sprout.finderlib.utils.Log;
 
 /**
  * This class behaves just like PSI_C but uses elliptic curves

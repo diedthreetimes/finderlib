@@ -8,7 +8,7 @@ import java.util.List;
 
 import com.sprout.finderlib.communication.CommunicationService;
 
-import android.util.Log;
+import com.sprout.finderlib.utils.Log;
 
 /**
  * Partialy-Homomorphic encryption version of PSI-C based on masked hamming distance

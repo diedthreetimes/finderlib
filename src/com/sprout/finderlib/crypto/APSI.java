@@ -6,7 +6,7 @@ import java.util.List;
 
 import com.sprout.finderlib.communication.CommunicationService;
 
-import android.util.Log;
+import com.sprout.finderlib.utils.Log;
 
 public class APSI extends AbstractPSIProtocol <String, Void, List<String> > {
 

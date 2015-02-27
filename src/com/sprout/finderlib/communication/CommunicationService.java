@@ -9,8 +9,6 @@ import java.util.Set;
 
 import org.spongycastle.math.ec.ECPoint;
 
-import android.os.Handler;
-
 
 public interface CommunicationService {
   // Constants that indicate the current connection state
@@ -38,7 +36,7 @@ public interface CommunicationService {
   public static final String DEVICE = "device_serialized";
   public static final String TOAST = "toast";
 
-  public void setHandler(Handler handler);
+  // public void setHandler(Handler handler);
   public int getState();
   public boolean isEnabled();
 

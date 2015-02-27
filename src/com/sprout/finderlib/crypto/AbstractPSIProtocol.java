@@ -4,7 +4,7 @@ import java.math.BigInteger;
 
 import com.sprout.finderlib.communication.CommunicationService;
 
-import android.util.Log;
+import com.sprout.finderlib.utils.Log;
 
 
 public abstract class AbstractPSIProtocol<Params, Progress, Result> extends PrivateProtocol<Params, Progress, Result> {	

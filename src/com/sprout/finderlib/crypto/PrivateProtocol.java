@@ -6,12 +6,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 
-import com.sprout.finderlib.communication.BluetoothServiceLogger;
 import com.sprout.finderlib.communication.CommunicationService;
 import com.sprout.finderlib.utils.StopWatch;
 
-import android.os.AsyncTask;
-import android.util.Log;
+import com.sprout.finderlib.utils.AsyncTask;
+import com.sprout.finderlib.utils.Log;
 
 /**
  * This class does all the work for conducting the secure communication
@@ -86,8 +85,8 @@ public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTa
     	offlineWatch.clear();
     	
     	// TODO: As it stands now conduct test must initialize this properly (this is dangerous)
-    	if(benchmark)
-    		((BluetoothServiceLogger) s).measureStart();
+    	/*if(benchmark)
+    		((BluetoothServiceLogger) s).measureStart();*/
     	
     	try{
     		do{
@@ -120,10 +119,12 @@ public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTa
     		reportTimers(client);
     		
     		if(benchmark){
+    		  /*
     			((BluetoothServiceLogger) s).measureStop();
     			Log.i(TAG, "Bytes used: " +((BluetoothServiceLogger) s).bytesUsed() / numTrials);
     			Log.i(TAG, "MegaBytes used: " +((BluetoothServiceLogger) s).megaBytesUsed() / numTrials);
     			Log.i(TAG, "GigaBytes used: " +((BluetoothServiceLogger) s).gigaBytesUsed() / numTrials);
+    			*/
     		}
 	    	
     	}

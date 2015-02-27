@@ -23,7 +23,7 @@ import com.sprout.finderlib.utils.Log;
 public class PSI_C extends AbstractPSIProtocol <String, Void, Integer> {
 	// Debugging
     private final String TAG = "PSI_C";
-    private final boolean D = false;
+    private final boolean D = true;
     
     
 	public PSI_C(CommunicationService s, boolean client) {
@@ -61,6 +61,7 @@ public class PSI_C extends AbstractPSIProtocol <String, Void, Integer> {
     	// This code has been pipelined (see note in server code)
     	
     	s.write(x);
+    	s.write(ais.size());
     	for( BigInteger ai : ais ){
     		s.write(ai);
     	}
@@ -79,7 +80,8 @@ public class PSI_C extends AbstractPSIProtocol <String, Void, Integer> {
     		tcis.add(hash( yrc.multiply((s.readBigInteger()).modPow(rc_inv, p)).mod(p) ) );
     	}
     	
-    	for(int i = 0; i < ais.size(); i++){
+    	int size = s.readInt();
+    	for(int i = 0; i < size; i++){
     		tsjs.add(s.readBigInteger());
     	}
     	
@@ -133,7 +135,8 @@ public class PSI_C extends AbstractPSIProtocol <String, Void, Integer> {
     	
     	List<BigInteger> bis = new ArrayList<BigInteger>(); // will store client data before shuffling
     	
-    	for(int i = 0; i < ksjs.size(); i++){
+    	int size = s.readInt();
+    	for(int i = 0; i < size; i++){
     		// Read an ai
     		ais.add(s.readBigInteger());
     		
@@ -149,6 +152,7 @@ public class PSI_C extends AbstractPSIProtocol <String, Void, Integer> {
     	}
     	
     	BigInteger xrs = x.modPow(rs,p);
+    	s.write(ksjs.size());
     	for(BigInteger ksj : ksjs){
     		// This is the following calculation all mod p
     		// H(x^Rs * ksj )

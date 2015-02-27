@@ -1,6 +1,7 @@
 package com.sprout.finderlib.communication;
 
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 
 import org.spongycastle.asn1.nist.NISTNamedCurves;
 import org.spongycastle.math.ec.ECPoint;
@@ -116,6 +117,15 @@ CommunicationService {
   public void write(ECPoint out){
     write(out.getEncoded());
   }
+  
+  private ByteBuffer b = ByteBuffer.allocate(4);
+  public void write(int out) {
+    b.putInt(out);
+    
+    write(b.array());
+    
+    b.clear();
+  }
 
   public BigInteger readBigInteger(){
     return new BigInteger(read());
@@ -124,6 +134,20 @@ CommunicationService {
   public ECPoint readECPoint(){
     //TODO: This probably doesn't belong here
     return NISTNamedCurves.getByName("P-224").getCurve().decodePoint(read());
+  }
+  
+  
+  public int readInt() {
+    byte[] buffer = read();
+    
+    if (buffer.length != 4) {
+      Log.e(TAG, "ReadInt invalid " + buffer.length);
+    }
+    b.put(buffer);
+    int t = b.getInt(0);
+    b.clear();
+    
+    return t;
   }
 
   /**

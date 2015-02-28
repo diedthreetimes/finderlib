@@ -59,6 +59,7 @@ public class EC_PSI_C extends AbstractECProtocol <String, Void, Integer > {
     	// This code has been pipelined (see note in server code)
     	
     	s.write(x);
+    	s.write(ais.size());
     	for( ECPoint ai : ais ){
     		s.write(ai);
     	}
@@ -78,7 +79,8 @@ public class EC_PSI_C extends AbstractECProtocol <String, Void, Integer > {
     		tcis.add(hash( yrc.add((s.readECPoint().multiply(rc_inv)))));
     	}
     	
-    	for(int i = 0; i < ais.size(); i++){
+    	int size = s.readInt();
+    	for(int i = 0; i < size; i++){
     		tsjs.add(s.readBigInteger());
     	}
     	
@@ -132,9 +134,10 @@ public class EC_PSI_C extends AbstractECProtocol <String, Void, Integer > {
     	// Start reading client data
     	x = s.readECPoint();
     	
+    	int size = s.readInt();
     	List<ECPoint> bis = new ArrayList<ECPoint>(); // will store client data before shuffling
     	
-    	for(int i = 0; i < ksjs.size(); i++){
+    	for(int i = 0; i < size; i++){
     		// Read an ai
     		ais.add(s.readECPoint());
     		
@@ -150,6 +153,7 @@ public class EC_PSI_C extends AbstractECProtocol <String, Void, Integer > {
     	}
     	
     	ECPoint xrs = x.multiply(rs);
+    	s.write(ksjs.size());
     	for(ECPoint ksj : ksjs){
     		// This is the following calculation all mod p
     		// H(x^Rs * ksj )

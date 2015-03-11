@@ -187,7 +187,7 @@ public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTa
     		}
     		// A bit hacky but a way to get around us both clicking start
     		else if(read.equals(START_TEST_MESSAGE + SEPERATOR + testName)){
-    			int rand = (int)(Math.random()*1000);
+    			int rand = (int)(Math.random()*1000000);
     			Log.i(TAG, "Start recieved from client: sending rand " + rand);
     			s.write(START_TEST_MESSAGE + SEPERATOR + testName); // Tell them we are in the double client state
     			s.write(String.valueOf(rand));

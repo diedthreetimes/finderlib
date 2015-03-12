@@ -23,7 +23,7 @@ import android.util.Log;
 public class PSI_C extends AbstractPSIProtocol <String, Void, Integer> {
 	// Debugging
     private final String TAG = "PSI_C";
-    private final boolean D = true;
+    private final boolean D = false;
     
     
 	public PSI_C(CommunicationService s, boolean client) {

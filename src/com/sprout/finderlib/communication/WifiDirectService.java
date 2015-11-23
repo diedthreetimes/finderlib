@@ -36,7 +36,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
-public class WifiService extends AbstractCommunicationService {
+public class WifiDirectService extends AbstractCommunicationService {
 
   static final String TAG = "WifiService";
   static final boolean D = true;
@@ -56,7 +56,7 @@ public class WifiService extends AbstractCommunicationService {
   private ConnectThread mConnectThread;
   private ConnectedThread mConnectedThread;
 
-  public WifiService(Context context, Handler handler) {
+  public WifiDirectService(Context context, Handler handler) {
     super(context, handler);
     mManager = (WifiP2pManager) context.getSystemService(Context.WIFI_P2P_SERVICE);
     mChannel = mManager.initialize(context, context.getMainLooper(), null);
@@ -388,7 +388,7 @@ public class WifiService extends AbstractCommunicationService {
       } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
         Log.d(TAG,"P2P this device changed");
         // Respond to this device's wifi state changing
-        WifiService.this.device = (WifiP2pDevice) intent.getParcelableExtra(
+        WifiDirectService.this.device = (WifiP2pDevice) intent.getParcelableExtra(
             WifiP2pManager.EXTRA_WIFI_P2P_DEVICE);
       }
     }
@@ -573,7 +573,7 @@ getState(
 
         // If a connection was accepted
         if (socket != null) {
-          synchronized (WifiService.this) {
+          synchronized (WifiDirectService.this) {
             switch (mState) {
             case STATE_LISTEN:
             case STATE_CONNECTING:
@@ -671,7 +671,7 @@ getState(
       }
 
       // Reset the ConnectThread because we're done
-      synchronized (WifiService.this) {
+      synchronized (WifiDirectService.this) {
         mConnectThread = null;
       }
 

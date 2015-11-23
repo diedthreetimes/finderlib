@@ -3,6 +3,7 @@ package com.sprout.finderlib.communication;
 import java.io.Serializable;
 
 import android.bluetooth.BluetoothDevice;
+import android.net.nsd.NsdServiceInfo;
 import android.net.wifi.p2p.WifiP2pDevice;
 
 public class Device implements Serializable{
@@ -15,6 +16,11 @@ public class Device implements Serializable{
 	Device(String name, String address){
 		this.name = name;
 		this.address = address;
+	}
+	
+	Device(NsdServiceInfo service) {
+	  name = service.getServiceName();
+	  address = service.getHost().getHostName();
 	}
 	
 	Device(BluetoothDevice bd){

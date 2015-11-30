@@ -10,12 +10,18 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.nsd.NsdManager;
 import android.net.nsd.NsdServiceInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -24,10 +30,7 @@ import android.util.Log;
 /**
  * WifiService using network discovery service
  * 
- * OK 3 important TODO's here
- * 1) how do I know if the discovery is complete?
- * no way to tell from NsdManager and checking for
- * repeated discovered service doesnt work
+ * OK 2 important TODO's here
  * 2) where do we unregister the registered service?
  * technically, we should unregister it when
  * WifiService is stopped, which means when in the app?
@@ -71,8 +74,21 @@ public class WifiService extends AbstractCommunicationService {
   private static final int PORT = 8997;
   public static final String SERVICE_NAME = "VVDFGSW";
   public String mServiceName = SERVICE_NAME;
-  
 
+//  
+//  private int nsdState = NsdManager.NSD_STATE_DISABLED;
+//
+//  private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+//      @Override
+//      public void onReceive(Context context, Intent intent) {
+//          String action = intent.getAction();
+//          Log.i(TAG, "in onReceive with action "+action);
+//          if (NsdManager.ACTION_NSD_STATE_CHANGED.equals(action)) {
+//            Log.i(TAG, "setting nsd state");
+//            nsdState = intent.getIntExtra(NsdManager.EXTRA_NSD_STATE, NsdManager.NSD_STATE_DISABLED);
+//          }
+//      }
+//  };
   
   public WifiService(Context context, Handler handler) {
     super(context, handler);
@@ -80,14 +96,21 @@ public class WifiService extends AbstractCommunicationService {
     mNsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
     
     // TODO: when are we going to unregister this?
-    registerService(PORT);
+//    mContext.registerReceiver(mReceiver, new IntentFilter());
   }
 
   @Override
   public boolean isEnabled() {
-    Log.w(TAG, "WiFiService isEnabled not implemented");
-    return true;
+    // TODO: not sure why not working
+//    Log.i(TAG, "in isEnabled: state is "+nsdState);
+//    return (nsdState == NsdManager.NSD_STATE_ENABLED ? true : false);
+    
+    // should be enough
+    WifiManager wifi = (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
+    return wifi.isWifiEnabled();
   }
+  
+  private boolean registered = false;
 
   @Override
   public void start() {
@@ -100,6 +123,11 @@ public class WifiService extends AbstractCommunicationService {
   @Override
   public synchronized void start(boolean secure) {
     if(D) Log.d(TAG, "start");
+    
+    if(!registered) {
+      registerService(PORT);
+      registered = true;
+    }
 
     resume();
 
@@ -150,8 +178,8 @@ public class WifiService extends AbstractCommunicationService {
   }
   
   @Override
-  public void stop() {
-    if(D) Log.d(TAG, "Stop");
+  public synchronized void stop() {
+    Log.d(TAG, "Stop: registered = "+registered);
     pause();
 
     setState(STATE_STOPPED);
@@ -170,19 +198,23 @@ public class WifiService extends AbstractCommunicationService {
       mSecureAcceptThread.cancel();
       mSecureAcceptThread = null;
     }
+    
+    if(registered) {
+      //TODO: definitely need more testing.
+      // it could cause an error if mRegistrationListener is not active
+      // maybe putting try catch here is a good idea just in case?
+      Log.i(TAG, "unregistering");
+      mNsdManager.unregisterService(mRegistrationListener);
+      registered = false;
+    }
+  }
+  
+  @Override
+  public synchronized void pause() {
   }
 
   @Override
-  public void pause() {
-//    if (mNsdManager != null) {
-//      Log.i(TAG, "unregistering listener");
-//      mNsdManager.unregisterService(mRegistrationListener);
-//    }
-  }
-
-  @Override
-  public void resume() {
-    //TODO: do sth...
+  public synchronized void resume() {
   }
 
   @Override
@@ -269,9 +301,6 @@ public class WifiService extends AbstractCommunicationService {
             Device peer = new Device(serviceInfo);
             
             callback.onServiceDiscovered(peer);
-            
-            // big TODO: where is the right place to call this?
-            callback.onDiscoveryComplete(true);
         }
     };
     
@@ -292,6 +321,7 @@ public class WifiService extends AbstractCommunicationService {
               Log.d(TAG, "Same machine: " + mServiceName);
           } else {
             Log.d(TAG, "Service discovery success " + service);
+            setTimeOut(DISCOVERY_IDLE_TIMEOUT, callback);
             if (service.getServiceName().contains(SERVICE_NAME)){
               Log.d(TAG, "resolving the host");
               mNsdManager.resolveService(service, mResolveListener);
@@ -330,7 +360,30 @@ public class WifiService extends AbstractCommunicationService {
           callback.onDiscoveryComplete(false);
       }
     };
+    setTimeOut(DISCOVERY_IDLE_TIMEOUT, callback);
     mNsdManager.discoverServices(SERVICE_TYPE, NsdManager.PROTOCOL_DNS_SD, mDiscoveryListener);
+  }
+  
+  private final long DISCOVERY_IDLE_TIMEOUT = 10*1000; // 10 secs is enough?
+  private Handler handler = new Handler();
+  
+  /**
+   * remove all runnables and set timeout runnable
+   * @param delayMillis
+   * @param callback
+   */
+  private void setTimeOut(long delayMillis, final Callback callback) {
+    handler.removeCallbacksAndMessages(null);
+    handler.postDelayed(new Runnable() {
+      
+      @Override
+      public void run() {
+        Log.i(TAG, "Havent discovered any valid service for "+DISCOVERY_IDLE_TIMEOUT+" ms. Now stopping it");
+        callback.onDiscoveryComplete(true);
+        
+      }
+    }, delayMillis);
+    
   }
 
   @Override

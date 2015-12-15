@@ -41,7 +41,7 @@ public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTa
     //      It is also worth noting that the benchmarking can not be threaded
     //      The timers are not thread safe
     protected boolean benchmark = false;
-    private final int NUM_TRIALS = 1;    
+    private int NUM_TRIALS = 1;    
     
     protected boolean client;
     protected String testName;
@@ -62,6 +62,14 @@ public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTa
       
       return this;
     }
+    
+    public PrivateProtocol <Params, Progress, Result> setNumTrials(int nt) {
+      this.NUM_TRIALS = nt;
+      
+      return this;
+    }
+    
+    public int getNumTrials() {return NUM_TRIALS;}
     	
     // Conduct the Test
     /**

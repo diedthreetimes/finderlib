@@ -101,6 +101,10 @@ CommunicationService {
   }
 
   protected abstract void retry();
+  
+  public void destroy(){
+    stop();
+  }
 
   @Override
   /**

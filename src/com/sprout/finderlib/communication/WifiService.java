@@ -30,15 +30,7 @@ import android.util.Log;
 /**
  * WifiService using network discovery service
  * 
- * OK 2 important TODO's here
- * 2) where do we unregister the registered service?
- * technically, we should unregister it when
- * WifiService is stopped, which means when in the app?
- * Ideas:
- * unregister it once the main activity is destroyed
- * or when we no longer connect to the wifi
- * or when DiscoveryService is stopped (then we need to move registerService)
- * 3) implement retry but how?
+ * TODO: retry but does that even make sense to do it?
  * @author norrathep
  *
  */
@@ -72,10 +64,12 @@ public class WifiService extends AbstractCommunicationService {
   NsdServiceInfo mService;
 
   private static final int PORT = 8997;
-  public static final String SERVICE_NAME = "VVDFGSW";
+  public static final String SERVICE_NAME = "Unlinked";
+  private static final int SOCKET_TIMEOUT = 5*1000; // 5 sec
   public String mServiceName = SERVICE_NAME;
+  private NsdServiceInfo myServiceInfo;
 
-//  
+//  TODO: this is supposed to tell the users whether nsd is working on the access point or not
 //  private int nsdState = NsdManager.NSD_STATE_DISABLED;
 //
 //  private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -95,8 +89,7 @@ public class WifiService extends AbstractCommunicationService {
 
     mNsdManager = (NsdManager) context.getSystemService(Context.NSD_SERVICE);
     
-    // TODO: when are we going to unregister this?
-//    mContext.registerReceiver(mReceiver, new IntentFilter());
+    registerService(PORT);
   }
 
   @Override
@@ -105,7 +98,7 @@ public class WifiService extends AbstractCommunicationService {
 //    Log.i(TAG, "in isEnabled: state is "+nsdState);
 //    return (nsdState == NsdManager.NSD_STATE_ENABLED ? true : false);
     
-    // should be enough
+    // should be enough for now
     WifiManager wifi = (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
     return wifi.isWifiEnabled();
   }
@@ -123,11 +116,8 @@ public class WifiService extends AbstractCommunicationService {
   @Override
   public synchronized void start(boolean secure) {
     if(D) Log.d(TAG, "start");
-    
-    if(!registered) {
-      registerService(PORT);
-      registered = true;
-    }
+
+    mNumTries = 0;
 
     resume();
 
@@ -198,15 +188,18 @@ public class WifiService extends AbstractCommunicationService {
       mSecureAcceptThread.cancel();
       mSecureAcceptThread = null;
     }
+  }
+  
+  @Override
+  public synchronized void destroy() {
+    
+    stop();
     
     if(registered) {
-      //TODO: definitely need more testing.
-      // it could cause an error if mRegistrationListener is not active
-      // maybe putting try catch here is a good idea just in case?
       Log.i(TAG, "unregistering");
       mNsdManager.unregisterService(mRegistrationListener);
-      registered = false;
     }
+    
   }
   
   @Override
@@ -215,6 +208,7 @@ public class WifiService extends AbstractCommunicationService {
 
   @Override
   public synchronized void resume() {
+
   }
 
   @Override
@@ -280,29 +274,11 @@ public class WifiService extends AbstractCommunicationService {
 
   @Override
   public void discoverPeers(final Callback callback) {
+      if(!registered) {
+        Log.i(TAG, "service hasnt been registered yet, wait for it!");
+        callback.onDiscoveryComplete(false);
+      }
       Log.i(TAG, "start discovering peers");
-      mResolveListener = new NsdManager.ResolveListener() {
-  
-        @Override
-        public void onResolveFailed(NsdServiceInfo serviceInfo, int errorCode) {
-            Log.e(TAG, "Resolve failed" + errorCode);
-        }
-  
-        @Override
-        public void onServiceResolved(NsdServiceInfo serviceInfo) {
-            Log.e(TAG, "Resolve Succeeded. " + serviceInfo);
-            
-            if (serviceInfo.getServiceName().equals(mServiceName)) {
-                Log.d(TAG, "Same IP.");
-                return;
-            }
-            mService = serviceInfo;
-
-            Device peer = new Device(serviceInfo);
-            
-            callback.onServiceDiscovered(peer);
-        }
-    };
     
     // set up listener
     mDiscoveryListener = new NsdManager.DiscoveryListener() {
@@ -324,7 +300,30 @@ public class WifiService extends AbstractCommunicationService {
             setTimeOut(DISCOVERY_IDLE_TIMEOUT, callback);
             if (service.getServiceName().contains(SERVICE_NAME)){
               Log.d(TAG, "resolving the host");
-              mNsdManager.resolveService(service, mResolveListener);
+              mNsdManager.resolveService(service, new NsdManager.ResolveListener() {
+                
+                @Override
+                public void onResolveFailed(NsdServiceInfo serviceInfo, int errorCode) {
+                    Log.e(TAG, "Resolve failed" + errorCode);
+                }
+          
+                @Override
+                public void onServiceResolved(NsdServiceInfo serviceInfo) {
+                    Log.e(TAG, "Resolve Succeeded. " + serviceInfo);
+                    
+                    if (serviceInfo.getServiceName().equals(mServiceName)) {
+                        Log.d(TAG, "Same IP.");
+                        return;
+                    }
+                    Log.i(TAG, "their service: "+serviceInfo);
+                    Log.i(TAG, "my service "+myServiceInfo);
+                    mService = serviceInfo;
+
+                    Device peer = new Device(serviceInfo);
+                    
+                    callback.onServiceDiscovered(peer);
+                }
+            });
             } else {
                 Log.d(TAG, "not applicable");
                 // TODO: dummy address since it cant resolve
@@ -394,6 +393,7 @@ public class WifiService extends AbstractCommunicationService {
       Log.e(TAG, e.getMessage());
       Log.e(TAG, "Maybe you call DiscoveryService.run() many times or you are being discovered?");
     }
+    handler.removeCallbacksAndMessages(null);
   }
 
   @Override
@@ -412,8 +412,10 @@ public class WifiService extends AbstractCommunicationService {
     if(D) Log.d(TAG, "Retrying in state: " + getState());
 
     if(mState == STATE_CONNECTED) return;
+    Log.d(TAG, "signaling failed");
     signalFailed();
-    start();
+
+    // TODO: retry...
     return;
     
   }
@@ -560,9 +562,12 @@ public class WifiService extends AbstractCommunicationService {
       // Make a connection to the Socket
       try {
         // This is a blocking call and will only return on a
-        // successful connection or an exception              
-        mmSocket.connect((new InetSocketAddress(host, port)));//, SOCKET_TIMEOUT);
+        // successful connection or an exception     
+        // TODO: use socket timeout since nsd using registering, not guarantee the device using the app
+        mmSocket.connect((new InetSocketAddress(host, port)), SOCKET_TIMEOUT);
       } catch (IOException e) {
+        e.printStackTrace();
+        Log.e(TAG, e.getMessage());
         // Close the socket
         try {
           mmSocket.close();
@@ -784,6 +789,10 @@ public class WifiService extends AbstractCommunicationService {
     }
   }
   
+  public synchronized boolean isRegistered() {
+    return registered;
+  }
+  
 
   public void registerService(int port) {
       Log.i(TAG, "Registering service at port "+port);
@@ -792,22 +801,30 @@ public class WifiService extends AbstractCommunicationService {
         @Override
         public void onServiceRegistered(NsdServiceInfo NsdServiceInfo) {
             mServiceName = NsdServiceInfo.getServiceName();
+            myServiceInfo = NsdServiceInfo;
             Log.i(TAG, "registered name: "+mServiceName);
+            
+            registered = true;
         }
         
         @Override
         public void onRegistrationFailed(NsdServiceInfo arg0, int arg1) {
             Log.i(TAG, "registration failed: "+arg0.toString());
+            
+            // TODO: what to do here?
         }
   
         @Override
         public void onServiceUnregistered(NsdServiceInfo arg0) {
           Log.i(TAG, "Successfully unregister: "+arg0.toString());
+          registered = false;
         }
         
         @Override
         public void onUnregistrationFailed(NsdServiceInfo arg0, int errorCode) {
           Log.i(TAG, "Unregistration failed: "+arg0.toString());
+          
+          // TODO: what to do here?
         }
         
       };

@@ -41,6 +41,8 @@ public interface CommunicationService {
   public void setHandler(Handler handler);
   public int getState();
   public boolean isEnabled();
+  
+  public void destroy();
 
   /**
    * start discovery process

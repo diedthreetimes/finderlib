@@ -115,7 +115,7 @@ public interface CommunicationService {
     public abstract void onServiceDiscovered(Device peer);
     public void onServiceDiscovered(Collection<Device> peers){
       for(Device device: peers)
-        onPeerDiscovered(device);
+        onServiceDiscovered(device);
     }
 
 

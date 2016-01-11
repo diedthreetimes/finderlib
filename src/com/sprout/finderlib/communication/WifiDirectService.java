@@ -38,7 +38,7 @@ import android.util.Log;
 
 public class WifiDirectService extends AbstractCommunicationService {
 
-  static final String TAG = "WifiService";
+  static final String TAG = "WifiDirectService";
   static final boolean D = true;
 
   private WifiP2pManager mManager;
@@ -156,6 +156,7 @@ public class WifiDirectService extends AbstractCommunicationService {
     ((WiFiDirectBroadcastReceiver) mReceiver).setCallback(callback);
 
     //TODO: Call fragments onInitiateDiscovery to ensure appropriate dialogs
+    callback.onDiscoveryStarted(); //TODO: where is the right place?
     mManager.discoverPeers(mChannel, new WifiP2pManager.ActionListener() {
       @Override
       public void onSuccess() {

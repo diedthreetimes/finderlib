@@ -1,4 +1,4 @@
-package com.sprout.finderlib.utils;
+package com.sprout.finderlib.utils.java;
 
 public abstract class AsyncTask<Params, Progress, Result> {
 

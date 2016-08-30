@@ -27,7 +27,9 @@
         <javac debug="true" debuglevel="${debuglevel}" destdir="bin/classes" includeantruntime="false" source="${source}" target="${target}">
             <src path="src"/>
             <exclude name="com/sprout/finderlib/communication/android/*" />
-            <exclude name="com/sprout/finderlib/utils/*/*" />
+            <exclude name="com/sprout/finderlib/utils/java/*" />
+            <exclude name="com/sprout/finderlib/utils/android/*" />
+            <exclude name="com/sprout/finderlib/utils/*" />
             <classpath refid="FinderLib.classpath"/>
         </javac>
     </target>

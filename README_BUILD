@@ -1,20 +1,22 @@
-
 This project contains two ANT scripts here: 
-1 for android and the other for native java library
+One is for android and the other is for native java library
 
-To import java-build.xml, in eclipse,
-1) right click the project (FinderLib) -> properties -> search for Builders
-2) select new -> ANT builder -> in main, select the correct location of java-build.xml
-3) check your newly created builder at Builders (unchecked the rest too, especially android-build one)
+#four lines below might not work
+#To configure java-build.xml as default builder for this repo, in eclipse,
+#1) right click the project (FinderLib) -> properties -> search for Builders
+#2) select new -> ANT builder -> in main, select the correct location of java-build.xml
+#3) check your newly created builder at Builders (unchecked the rest too, especially android-build one)
 
 To run:
-1) Right click at java-build.xml -> run as ANT build
--> it should output bin/finderlib-java.jar
-Then, you can export it to include into your project
+1) Right click at java-build.xml -> run as ANT build -> it should output bin/finderlib-java.jar
+(The pre-built version should be in lib folder)
+
+To include it into other project:
+1) Add finderlib-java.jar and utils-java.jar as libraries in build path
 
 NOTE1: you should not select both builds since Java jar will contain extra folders.
 
 NOTE2: android-build relies on lib/utils-android.jar and vice versa for java-build
-To re-generate utils-android(or java).jar, move StopWatch.java to temporary folder first,
-then, rename com.sprout.finderlib.utils.android package to com.sprout.finderlib.utils
-and build it as jar library
+To re-compile utils-android(or java).jar, 
+move everything inside com.sprout.finderlib.utils.android package to com.sprout.finderlib.utils
+and build com.sprout.finderlib.utils as jar library

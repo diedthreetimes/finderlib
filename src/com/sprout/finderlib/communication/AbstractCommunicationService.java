@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 import org.spongycastle.asn1.nist.NISTNamedCurves;
 import org.spongycastle.math.ec.ECPoint;
 
-import com.sprout.finderlib.utils.Log;
+import com.sprout.finderlib.utils.android.Log;
 
 
 public abstract class AbstractCommunicationService implements

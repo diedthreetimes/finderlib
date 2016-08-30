@@ -1,0 +1,66 @@
+# INCLUDE=-I./include
+
+PARALLEL_OVERLOAD=-D_GLIBCXX_PARALLEL
+
+LOCAL_NTL_PATH=/usr/local
+LOCAL_SSL_PATH=$(HOME)/.local
+
+# Performance multi-thread flags
+CXXFLAGS=-std=c++11 -m64 -fPIC -O3 -g -fopenmp -mtune=native -pthread  -Wall \
+		-Wfatal-errors -Iinclude -DTIMINGS -DOPENSSL_THREADS
+
+# Performance single thread
+#CXXFLAGS=-std=c++11 -m64 -fPIC -O3 -g -mtune=native -Wall \
+		-Wfatal-errors -Wno-unknown-pragmas -Iinclude -DTIMINGS
+# Debug flags
+#CXXFLAGS=-std=c++11 -m64 -fPIC -O0 -g -Wall -Wfatal-errors -Wno-unknown-pragmas \
+		-Iinclude -DTIMINGS 
+
+CXXFLAGS := $(CXXFLAGS) -I$(LOCAL_NTL_PATH)/include -I$(LOCAL_SSL_PATH)/include
+
+# PARALLEL_OVERLOAD=-D_GLIBCXX_PARALLEL
+
+LD=-L$(LOCAL_NTL_PATH)/lib -Wl,-rpath,$(LOCAL_NTL_PATH)/lib -lntl -lgmp \
+	-L$(LOCAL_SSL_PATH)/lib -Wl,-rpath,$(LOCAL_SSL_PATH)/lib -lssl -lcrypto
+
+SRC_DIR=src
+OBJ_DIR=obj
+INCLUDE_DIR=include
+BIN_DIR=bin
+BIN_SRC_DIR=bin_src
+
+SRC := $(wildcard $(SRC_DIR)/*.cpp)
+INCLUDES := $(wildcard $(INCLUDE_DIR)/*.h)
+BIN_SRC := $(wildcard $(BIN_SRC_DIR)/*.cpp)
+
+OBJS := $(addprefix $(OBJ_DIR)/,$(SRC:$(SRC_DIR)/%.cpp=%.o))
+
+DEPS=$(INCLUDES)
+
+BINS=$(addprefix $(BIN_DIR)/,$(BIN_SRC:$(BIN_SRC_DIR)/%.cpp=%))
+
+### TARGETS ###
+
+all: objects bins
+
+clean:
+ifeq ($(call ifndef_any_of,OBJ_DIR BIN_DIR),)
+	rm $(OBJ_DIR)/*.o $(BIN_DIR)/* 
+endif
+
+
+bins: $(BINS)
+
+
+bin/%: $(BIN_SRC_DIR)/%.cpp $(OBJS)
+	mkdir -p bin
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(BINFLAGS) $(LD)
+
+objects: $(OBJS)
+
+obj/%.o : $(SRC_DIR)/%.cpp $(DEPS)
+	mkdir -p obj
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+
+

@@ -1,0 +1,5 @@
+Iarpa:
+    - Generating curve element: src/crypto/crypto-api.c:~236
+    - PRNG_nextZpStar: src/crypto/prng.c:~369
+Pbc:
+    - arith/poly.c:polymod_from_hash

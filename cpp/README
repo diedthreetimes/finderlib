@@ -1,0 +1,36 @@
+Use make to compile the code: binaries will appear in the bin directory.
+Other content:
+	- object files are in obj
+	- sources for the binaries are in bin_src
+	- sources for object files are in src
+	- headers are in include
+Content of directories bin and obj is deleted when using make clean.
+
+Fast test:
+	$ bin/test_dp_zz data/zp_80_default - -
+
+PSI-CA computation on two files (each line of a file is an element of the set):
+	$ bin/psic_dp_zz data/zp_80_default <client-set> <server-set> - -
+
+The Makefile has three versions of CXXFLAGS: performance multi-thread, performance single-thread, debug single-thread. Uncomment the required CXXFLAGS before compiling.
+
+Requirements:
+	- NTL, version > 7 for multi-threading (tested with versions 8 and 9 compiled from sources with gcc4.9 on debian - , using gmp integer backend)
+	- gmp, if using NTL with gmp backend
+	- OpenSSL (tested on openssl 1.0.1k of debian repo and 1.0.2a from sources)
+	
+
+Fast NTL guide: http://www.shoup.net/ntl/doc/tour-unix.html). 
+Very fast NTL guide: go in the src directory of the NTL source and execute the command:
+	$ ./configure NTL_GMP_LIP=on NTL_EXCEPTIONS=on NTL_GF2X_LIB=on NTL_THREADS=on SHARED=on
+Then the "standard":
+	$ make -j
+	$ sudo make install
+NB: will install NTL in /usr/local, that is set as a default value of the LOCAL_NTL_PATH in the Makefile. If you want to change the directory of the local version of the compiled NTL using PREFIX=<path> in the ntl configure command, changing LOCAL_NTL_PATH in the Makefile should do the job.
+
+Installing the last version of Openssl from sources may improve performance. The following command compiles and install openssl with 64-bit optimizations in the local directory of the user (it's better if standard software of the machine uses the version installed from the repo..)
+
+	$ ./config --prefix=${HOME}/.local threads shared -m64 -pthread -D_REENTRANT -mtune=native enable-ec_nistp_64_gcc_128
+	$ make depend
+        $ make -j
+ 	$ make install

@@ -5,10 +5,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
-
 import com.sprout.finderlib.communication.CommunicationService;
 import com.sprout.finderlib.utils.StopWatch;
-
 import com.sprout.finderlib.utils.AsyncTask;
 import com.sprout.finderlib.utils.Log;
 
@@ -40,7 +38,7 @@ public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTa
     //      It is also worth noting that the benchmarking can not be threaded
     //      The timers are not thread safe
     protected boolean benchmark = true;
-    private final int NUM_TRIALS = 1;    
+    private int NUM_TRIALS = 1;    
     
     protected boolean client;
     protected String testName;
@@ -58,6 +56,12 @@ public abstract class PrivateProtocol <Params, Progress, Result> extends AsyncTa
     
     public PrivateProtocol <Params, Progress, Result> setBenchmark(boolean benchmark) {
       this.benchmark = benchmark;
+      
+      return this;
+    }
+    
+    public PrivateProtocol <Params, Progress, Result> setNumTrials(int numTrials) {
+      this.NUM_TRIALS = numTrials;
       
       return this;
     }
